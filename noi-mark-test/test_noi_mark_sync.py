@@ -377,7 +377,8 @@ def BagFileSetup(path, orientation,rotationAngle):  # path = '.../', orientation
     time.sleep(1)
     loop = 0
     try:
-        while True:
+        #while True:
+        while loop < 20:
             loop += 1
             # Get frameset of color and depth
             frames = pipeline.wait_for_frames()
@@ -425,7 +426,6 @@ def BagFileSetup(path, orientation,rotationAngle):  # path = '.../', orientation
                 skeletonObject = None
                 for item in skeletonsTable:  # searching for the full corresponding alphapose cloud object
                     if item.image_id == color_frame_name:
-                        print("here")
                         skeletonObject = item
                         currentTimeStamp = float(item.image_id[:-4])
                         break
@@ -554,6 +554,5 @@ def BagFileSetup(path, orientation,rotationAngle):  # path = '.../', orientation
 if __name__ == "__main__":
     vicon_points = ViconReader('C:/Users/lotem.n/Desktop/lotem/noi-mark-test/vicon.csv')
     vicon_points = SyncByMovementVicon(vicon_points)
-    openposeSkeletons, openposeTimestamps = BagFileSetup('C:/Users/lotem.n/Desktop/lotem/noi-mark-test/front_frames', 'front', 90)
-    openposeSkeletons, openposeTimestamps = SyncByMovementOpenpose(openposeSkeletons, openposeTimestamps)
+    openposeSkeletons, openposeTimestamps = BagFileSetup('C:/Users/lotem.n/Desktop/lotem/noi-mark-test/', 'front', -90)
     X = 3

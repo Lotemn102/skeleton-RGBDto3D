@@ -10,14 +10,14 @@ from preprocessing.realsense_data_reader import RealSenseReader
 
 class TestPreprocessing(unittest.TestCase):
     def test_read_data(self):
-        REALSENSE_PATH = '../Sub003_Squat01_Front.bag'
-        VICON_PATH = '../Sub003_Squat.csv'
+        REALSENSE_PATH = 'C:/Users/lotem.n/Desktop/lotem/noi-mark-test/front.bag'
+        VICON_PATH = 'C:/Users/lotem.n/Desktop/lotem/noi-mark-test/vicon.csv'
         REALSENSE_FRAME_RATE = 30
         VICON_FRAME_RATE = 120
 
         # Init the VICON reader and read the points.
         vicon_reader = VICONReader(vicon_file_path=VICON_PATH)
-        vicon_points = vicon_reader.get_points() # Dictnary of <frame_id, List<Point>>
+        vicon_points = vicon_reader.get_points() # Dictionary of <frame_id, List<Point>>
         current_frame = list(vicon_points.keys())[0] # Get the first frame
 
         # Init the realsense reader and get the pipeline.
@@ -33,7 +33,7 @@ class TestPreprocessing(unittest.TestCase):
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
             realsense_image = np.asanyarray(color_frame.get_data())
-            realsense_image = np.rot90(realsense_image, k=1) # If image is rotated by default
+            realsense_image = np.rot90(realsense_image, k=3) # If image is rotated by default
 
             # Read Vicon points
             try:
