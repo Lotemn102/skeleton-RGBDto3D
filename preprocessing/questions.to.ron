@@ -1,0 +1,25 @@
+1. Synchronizing the data: 
+I'm trying to synchronize the realsense data and the vicon data, so that i will have cut videos that start and end with the same position of the subject. I've tried to use Noy & Mark's tool for that (reminder: they have used the OpenPose to detect the first frame where the subject is doing T-pose in the realsense data, and detected the corresponding frame in the vicon data), but it didn't perform well. The output was simply not synchronized... They said that the program was not completely tested for this feature, so that's no surprise.
+Anyways, given that ~1/4 of the data was recorded without the T-pose, i think it's a waste of time to debug their code / implement their algorithm from scratch. I think i'll extract the frames from the realsense, project the vicon points in each frame to an image, and i'll manually detect the corresponding frames. I'm not the biggest fan of this method since i can't really measure the correlation between the frames rather than לפי העין, but i can't think of a better method. Can you think of any?
+
+2. Synchronizing the FPS:
+The realsense FPS is 30 and the Vicon one is 120. I want to have one-to-one mapping, i.e each frame in the realsense will have a single correlated frame in the vicon data. I was thinking to simply sample every 4th frame from the vicon data after i'll synchronize them. Another idea can be to duplicate each frame in the realsense data 4 times, but that might add bias. What method you think is better?
+
+3. Data imputation:
+	- When i read the realsense bag files frame-by-frame i'm having missing frames. In some recordings it generates half (!) of expected frames. It "skips" frames pretty randomly: 1, 4, 5, 6, 9, 13... The skippings are occuring more as recording continues. I thought it has something to do with the fact that i'm running on my (weak) laptop right now, but looks like it's a known issue caused by using non-HPC computers while recording the data (source: 1. https://github.com/IntelRealSense/librealsense/issues/8288 2. https://github.com/IntelRealSense/librealsense/issues/2102). In each session there is one camera that recorded sucessfully all frames, and the 2 other ones are "skipping", for instance:
+	
+	ADD GRAPH
+	
+	I think i'll add "padding" by duplicating the first/last frame in the missing frames gaps. Another method would be to decide we are using lower FPS, but choosing the exact FPS can be tricky since different videos have different "skippings". Using the המכנה המשותף הנמוך ביותר will cause throwing away good data from other videos... What do you think on that?
+	- There are some missing values in the Vicon data as well. There are 4 cases:
+		A. Places where there are ~2-10 frames with missing points.
+		B. Places where there are ~10-120 frames with missing points.
+		C. Places where there are >120 frames with missing points. In some cases it's thousands (!) of frames.
+		D. Places where from some frame, some points are completly missing.
+	
+	ADD GRAPH
+		
+	I think i'll fill the data in case A  using the average value of the last good frame and the next good frame, in cases C & D i obviously can't do much and we'll have to make sure when implemeting the net that it ignores the null samples. In cases B i'm uncertain if we should leave them as nulls or interpolate the points based on the last good frame and the next good frame. I think we can give a try, but not sure how to measure if this process is effective. Can you think of a way? 
+
+4. Is there added value to bag files instead of more poplular video formats?
+

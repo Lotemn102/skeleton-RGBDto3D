@@ -60,6 +60,40 @@ class VICONReader:
 """
 Usage example
 
+# Init the reader.
+vicon_reader = VICONReader(vicon_file_path=VICON_PATH)
 
+# Get the points.
+vicon_points = vicon_reader.get_points() # Dictionary of <frame_id, List<Point>>
 
+for frame in list(vicon_points.keys()):
+    # Get 39 Vicon points.
+    current_frame_points = vicon_points[frame]
+
+    # Create an empty image to write the vicon points on in later.
+    blank = np.zeros(shape=(640, 480, 3), dtype=np.uint8)
+    vicon_image = cv2.cvtColor(blank, cv2.COLOR_RGB2BGR)
+    
+    for i, point in enumerate(current_frame_points):
+        x = point.x
+        y = point.y
+        z = point.z
+    
+        if math.isnan(x) or math.isnan(y) or math.isnan(z):
+            # Skip this point for the moment
+            continue
+    
+        # Scale the coordinates so they will fit the image.
+        x = x / 5
+        z = z / 5
+        # Draw the point on the blank image (orthographic projection).
+        vicon_image = cv2.circle(vicon_image, ((int(z) + 300), (int(x) + 400)), radius=0, color=(0, 0, 255),
+                                 thickness=10) # Coordinates offsets are manually selected to center the object.
+    
+    # Rotate the image, since the vicon points are also rotated by default.
+    vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE) 
+    
+    # Render realsense image and vicon image.
+    cv2.imshow("Vicon Stream", vicon_image)
+    cv2.waitKey(1)
 """

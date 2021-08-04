@@ -52,7 +52,7 @@ cv2.namedWindow("RGB Stream", cv2.WINDOW_AUTOSIZE)
 
 # Streaming loop
 while True:
-    # Get frameset of depth
+    # Get frameset
     frames = pipeline.wait_for_frames()
 
     # Get color frame

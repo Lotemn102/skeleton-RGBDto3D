@@ -5,6 +5,7 @@ __pycache__/
 *.bag
 *.csv
 .idea/
+*.png
 
 # C extensions
 *.so
