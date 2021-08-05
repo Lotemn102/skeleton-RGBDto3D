@@ -7,6 +7,7 @@ __pycache__/
 .idea/
 *.png
 *.avi
+*.json
 
 # C extensions
 *.so

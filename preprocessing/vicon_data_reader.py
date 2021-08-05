@@ -59,6 +59,7 @@ class VICONReader:
 
 """
 Usage example
+=============
 
 # Init the reader.
 vicon_reader = VICONReader(vicon_file_path=VICON_PATH)

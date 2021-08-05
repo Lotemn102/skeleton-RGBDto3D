@@ -10,8 +10,8 @@ from preprocessing.realsense_data_reader import RealSenseReader
 
 class TestPreprocessing(unittest.TestCase):
     def test_read_data(self):
-        REALSENSE_PATH = 'C:/Users/lotem.n/Desktop/lotem/noi-mark-test/front.bag'
-        VICON_PATH = 'C:/Users/lotem.n/Desktop/lotem/noi-mark-test/vicon.csv'
+        REALSENSE_PATH = '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Squat_A_Back.bag'
+        VICON_PATH = '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Vicon/Sub004 Squat.csv'
         REALSENSE_FRAME_RATE = 30
         VICON_FRAME_RATE = 120
 
@@ -68,7 +68,7 @@ class TestPreprocessing(unittest.TestCase):
 
             # Render realsense image and vicon image.
             cv2.imshow("RGB Stream", realsense_image)
-            cv2.imshow("Vicon Stream", vicon_image)
+            #cv2.imshow("Vicon Stream", vicon_image)
             key = cv2.waitKey(1)
             current_frame = current_frame + (VICON_FRAME_RATE / REALSENSE_FRAME_RATE)
 
