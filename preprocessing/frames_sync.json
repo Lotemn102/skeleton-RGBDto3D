@@ -1,0 +1,497 @@
+[
+  {
+    "sub_name": "Sub001",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub002",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub003",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub004",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub005",
+    "Squat": {
+      "Back": 114984,
+      "Front": 9214,
+      "Side": 9062,
+      "Vicon": 1376
+    },
+    "Stand": {
+      "Back": 107220,
+      "Front": 1450,
+      "Side": 1297,
+      "Vicon": 1483
+    },
+    "Tight": {
+      "Back": 111964,
+      "Front": 6195,
+      "Side": 6042,
+      "Vicon": 1634
+    },
+    "Left": {
+      "Back": 110288,
+      "Front": 4518,
+      "Side": 4367,
+      "Vicon": 1245
+    },
+    "Right": {
+      "Back": 108761,
+      "Front": 2991,
+      "Side": 2839,
+      "Vicon": 1366
+    }
+  },
+  {
+    "sub_name": "Sub006",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub007",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub008",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub009",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub010",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub011",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub012",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub013",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub014",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub015",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  }
+]

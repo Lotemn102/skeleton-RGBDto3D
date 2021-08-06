@@ -8,6 +8,7 @@ __pycache__/
 *.png
 *.avi
 *.json
+!frames_sync.json
 
 # C extensions
 *.so
