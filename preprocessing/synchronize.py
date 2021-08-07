@@ -9,7 +9,6 @@ Pipeline
         data in 'frames_sync.json'.
     4. Cut the videos by calling 'generate_synchronized_videos_for_all()'.
 """
-import glob
 
 import cv2
 import numpy as np
@@ -20,6 +19,7 @@ import json
 from realsense_data_reader import RealSenseReader
 from vicon_data_reader import VICONReader
 
+# ---------------------- Generate frames for manually detecting T-pose -------------------------------------------------
 def generate_realsense_frames(bag_path: str, bag_shoot_angle: str, sub_name: str, sub_position: str):
     """
     Extract frames from .bag file, and save them as images.
@@ -156,6 +156,109 @@ def generate_vicon_frames(csv_path: str):
 
         # Save image.
         cv2.imwrite(save_path + "/" + str(frame) + '.png', vicon_image)
+
+def aux_generate_realsense_frames():
+    """
+    Read all bag files and generate their frames.
+
+    :return: None.
+    """
+
+    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
+        for file in files:
+            if file.endswith(".bag"):
+                if 'Sub001' in file or 'Sub002' in file:
+                    continue
+
+                if 'Extra' in file or 'Extra' in dirs or 'Extra' in root:
+                    continue
+
+                if 'NOT' in file:
+                    continue
+
+                remove_extension = file[:-4]
+                if 'withoutlight' in remove_extension:
+                    continue
+                splitted = remove_extension.split('_')
+                subject_name = [e for e in splitted if 'Sub' in e][0]
+                subject_number = int(subject_name[3:])
+                shooting_angle = [e for e in splitted if e in ['Front', 'Back', 'Side']][0]
+
+                for e in splitted:
+
+                    if 'squat' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'stand' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'left' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'right' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'tight' in e.lower():
+                        subject_position = e
+                        break
+
+                if subject_number > 15:
+                    continue
+
+                if subject_name in ['Sub003', 'Sub004', 'Sub005', 'Sub006', 'Sub007', 'Sub008']:
+                    continue
+
+                if subject_name == 'Sub009' and subject_position != 'Back':
+                    continue
+
+                print("Working on " + subject_name + ", " + subject_position + ", " + shooting_angle)
+
+                try:
+                    generate_realsense_frames(bag_path=root + "/" + file, sub_name=subject_name,
+                                              bag_shoot_angle=shooting_angle, sub_position=subject_position)
+                except:
+                    print("Couldn't read " + file)
+
+def aux_generate_vicon_frames():
+    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
+        for file in files:
+            if file.endswith(".csv"):
+                if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file:
+                    continue
+
+                if 'without' in file or 'Cal' in file:
+                    continue
+
+                remove_extension = file[:-4]
+                splitted = remove_extension.split('_')
+
+                if len(splitted) == 1:
+                    splitted = remove_extension.split(' ')
+
+                subject_name = [e for e in splitted if 'Sub' in e][0]
+                subject_number = int(subject_name[3:])
+
+                for e in splitted:
+                    if 'squat' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'stand' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'left' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'right' in e.lower():
+                        subject_position = e
+                        break
+                    elif 'tight' in e.lower():
+                        subject_position = e
+                        break
+
+                print("Working on " + subject_name + ", " + subject_position)
+                generate_vicon_frames(csv_path=root + "/" + file)
+
+# ---------------------------------------- Create trimmed videos & csv file --------------------------------------------
 
 def create_realsense_synchronized_video(bag_shoot_angle: str, sub_name: str, sub_position: str, first_frame_number: int,
                                         total_frames_number: int):
@@ -306,116 +409,14 @@ def create_vicon_synchronized_video(sub_name: str, sub_position: str, first_fram
 
     print("Finished.")
 
-def aux_generate_realsense_frames():
-    """
-    Read all bag files and generate their frames.
-
-    :return: None.
-    """
-
-    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
-        for file in files:
-            if file.endswith(".bag"):
-                if 'Sub001' in file or 'Sub002' in file:
-                    continue
-
-                if 'Extra' in file or 'Extra' in dirs or 'Extra' in root:
-                    continue
-
-                if 'NOT' in file:
-                    continue
-
-                remove_extension = file[:-4]
-                if 'withoutlight' in remove_extension:
-                    continue
-                splitted = remove_extension.split('_')
-                subject_name = [e for e in splitted if 'Sub' in e][0]
-                subject_number = int(subject_name[3:])
-                shooting_angle = [e for e in splitted if e in ['Front', 'Back', 'Side']][0]
-
-                for e in splitted:
-
-                    if 'squat' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'stand' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'left' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'right' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'tight' in e.lower():
-                        subject_position = e
-                        break
-
-                if subject_number > 15:
-                    continue
-
-                if subject_name in ['Sub003', 'Sub004', 'Sub005', 'Sub006', 'Sub007', 'Sub008']:
-                    continue
-
-                if subject_name == 'Sub009' and subject_position != 'Back':
-                    continue
-
-                print("Working on " + subject_name + ", " + subject_position + ", " + shooting_angle)
-
-                try:
-                    generate_realsense_frames(bag_path=root + "/" + file, sub_name=subject_name,
-                                              bag_shoot_angle=shooting_angle, sub_position=subject_position)
-                except:
-                    print("Couldn't read " + file)
-
-def aux_generate_vicon_frames():
-    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
-        for file in files:
-            if file.endswith(".csv"):
-                if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file:
-                    continue
-
-                if 'without' in file or 'Cal' in file:
-                    continue
-
-                remove_extension = file[:-4]
-                splitted = remove_extension.split('_')
-
-                if len(splitted) == 1:
-                    splitted = remove_extension.split(' ')
-
-                subject_name = [e for e in splitted if 'Sub' in e][0]
-                subject_number = int(subject_name[3:])
-
-                for e in splitted:
-                    if 'squat' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'stand' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'left' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'right' in e.lower():
-                        subject_position = e
-                        break
-                    elif 'tight' in e.lower():
-                        subject_position = e
-                        break
-
-                print("Working on " + subject_name + ", " + subject_position)
-                generate_vicon_frames(csv_path=root + "/" + file)
-
 def generate_synchronized_videos_for_all():
     f = open('frames_sync.json')
     data = json.load(f)
 
-    for i in range(5, 6):
+    for i in range(9, 10):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
 
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
-
             # Calculate number of frames after trimming for each video & vicon, so we can know which one is the shortest.
             min_frames_number = np.Inf
 

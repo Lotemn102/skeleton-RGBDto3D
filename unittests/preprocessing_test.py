@@ -11,7 +11,7 @@ from preprocessing.realsense_data_reader import RealSenseReader
 class TestPreprocessing(unittest.TestCase):
     def test_read_data(self):
         REALSENSE_PATH = '../../Data/Sub013_Left_Back.bag'
-        VICON_PATH = '../../Data/Sub004 Squat01.csv'
+        VICON_PATH = '../../Data/Sub007 Stand.csv'
         REALSENSE_FRAME_RATE = 30
         VICON_FRAME_RATE = 120
 
@@ -88,10 +88,13 @@ class TestPreprocessing(unittest.TestCase):
 
     def test_sync(self):
         FPS = 30
-        FIRST_VIDEO_PATH = '../preprocessing/clean/Sub005/Sub005_Squat_Back.avi'
-        SECOND_VIDEO_PATH = '../preprocessing/clean/Sub005/Sub005_Squat_Front.avi'
-        THIRD_VIDEO_PATH = '../preprocessing/clean/Sub005/Sub005_Squat_Side.avi'
-        VICON_VIDEO_PATH = '../preprocessing/clean/Sub005/Sub005_Squat_Vicon.avi'
+        SUB_NUMBER = '007'
+        POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
+        POSITON = POSITIONS_LIST[0]
+        FIRST_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Back.avi'
+        SECOND_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Front.avi'
+        THIRD_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Side.avi'
+        VICON_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Vicon.avi'
 
         cap_1 = cv2.VideoCapture(FIRST_VIDEO_PATH)
         cap_2 = cv2.VideoCapture(SECOND_VIDEO_PATH)
