@@ -169,7 +169,7 @@ class TestPreprocessing(unittest.TestCase):
         POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
         ANGLE_LIST = ['Back', 'Front', 'Side']
         POSITON = POSITIONS_LIST[3]
-        ANGLE = ANGLE_LIST[1]
+        ANGLE = ANGLE_LIST[0]
         RGB_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
             SUB_NUMBER) + '_' + POSITON + '_' + ANGLE + '.avi'
         VICON_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
@@ -192,9 +192,9 @@ class TestPreprocessing(unittest.TestCase):
             ret_2, frame_2 = cap_2.read()
             ret_1, frame_1 = cap_1.read()
 
-            #while counter < 4: # Read every 4th frames from vicon, since vicon FPS is 120
-            #    ret_2, frame_2 = cap_2.read()
-            #    counter = counter + 1
+            while counter < 4: # Read every 4th frames from vicon, since vicon FPS is 120
+                ret_2, frame_2 = cap_2.read()
+                counter = counter + 1
 
             if not ret_1 or not ret_2: # Loop
                 cap_1.set(1, 0) # Set current frame number to 0
@@ -211,6 +211,8 @@ class TestPreprocessing(unittest.TestCase):
                 height_vicon = int(frame_2.shape[0] * scale_percent / 100)
                 dims_vicon = (width_vicon, height_vicon)
                 first_iteration = False
+
+            counter = 0
 
             frame_1 = cv2.resize(frame_1, dims_realsense, interpolation=cv2.INTER_AREA)
             frame_2 = cv2.resize(frame_2, dims_vicon, interpolation=cv2.INTER_AREA)

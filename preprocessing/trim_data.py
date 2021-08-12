@@ -13,7 +13,7 @@ import math
 from vicon_data_reader import VICONReader
 
 
-def find_clean_frames_indices_on_realsense_and_vicon(bag_shoot_angle: str, sub_name: str, sub_position: str,
+def find_clean_frames_indices_on_realsense_and_vicon_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
                                                      first_frame_number_realsense: int,
                                                      first_frame_number_vicon: int) -> (List[int], Dict):
     # -------------------------------------------- Find realsense clean frames -----------------------------------------
@@ -107,6 +107,102 @@ def find_clean_frames_indices_on_realsense_and_vicon(bag_shoot_angle: str, sub_n
         else:
             # Add the frame to the clean frames.
             vicon_frames_clean[vicon_frame] = trimmed_frames_vicon[vicon_frame]
+
+    # Clean the frames in realsense that have missing vicon correlated frames.
+    final_frames_numbers_realsense = []
+
+    for idx, frame in enumerate(frames_numbers_realsense):
+        if idx in vicon_skipped_frames_numbers:
+            continue
+
+        final_frames_numbers_realsense.append(frame)
+
+    return final_frames_numbers_realsense, vicon_frames_clean
+
+def find_clean_frames_indices_on_realsense_and_vicon_120_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
+                                                     first_frame_number_realsense: int,
+                                                     first_frame_number_vicon: int) -> (List[int], Dict):
+    # -------------------------------------------- Find realsense clean frames -----------------------------------------
+    # Get to the folder of all frames.
+    folder_path_realsense = 'frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
+
+    # Starting from the given first_frame_number, create a new video.
+    all_frames_files_realsense = os.listdir(folder_path_realsense)
+    all_frames_files_realsense.remove('log.json')
+    all_frames_files_realsense = sorted(all_frames_files_realsense, key=lambda x: int(x[:-4]))
+
+    # Find first_frame_number index in the sorted list.
+    first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense)) if
+                                   str(first_frame_number_realsense) in all_frames_files_realsense[i]][0]
+
+    # Remove all frames before first_frame_number.
+    trimmed_frames_files_realsense = all_frames_files_realsense[first_frame_index_realsense:]
+    total_frames_number = len(trimmed_frames_files_realsense)
+
+    frames_numbers_realsense = []  # Saving the frame numbers, so i would be able to calculate the difference between each 2 frames
+    # and "skip" those frames in the vicon data.
+
+    # Read all frames.
+    for index, file in enumerate(trimmed_frames_files_realsense):
+        current_frame_number = int(file[:-4])
+
+        if index > total_frames_number:
+            break
+
+        frames_numbers_realsense.append(current_frame_number)
+
+    differences_list_realsense = [j - i for i, j in zip(frames_numbers_realsense[:-1], frames_numbers_realsense[1:])]
+
+    # ---------------------------------------------- Find vicon clean frames -------------------------------------------
+    # Get to the folder of vicon csv file.
+    csv_path = '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/' + sub_name + "/" + \
+               sub_name + "_" + "Vicon/"  + sub_name + " " + sub_position + ".csv"
+
+    vicon_reader = VICONReader(vicon_file_path=csv_path)
+    vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+
+    # Find first_frame_number index in the dict.
+    all_frames_vicon = list(vicon_points.keys())
+    first_frame_index_vicon = [i for i in range(len(all_frames_vicon)) if
+                                   first_frame_number_vicon == all_frames_vicon[i]][0]
+
+    # Remove all frames before first_frame_number.
+    trimmed_frames_vicon = {k: vicon_points[k] for k in list(vicon_points.keys())[first_frame_index_vicon:]}
+
+    # Calculate the indices of the frames we need to take from vicon, based on the clean realsense frames.
+    vicon_indices_list = [0, 1, 2, 3]
+
+    for diff in differences_list_realsense:
+        # Each realsense frame has 4 correlated vicon frames.
+        vicon_indices_list.append(vicon_indices_list[-4] + diff*4)
+        vicon_indices_list.append(vicon_indices_list[-1] + 1)
+        vicon_indices_list.append(vicon_indices_list[-1] + 1)
+        vicon_indices_list.append(vicon_indices_list[-1] + 1)
+
+    # Take all vicon points based on the clean realsense frames, and remove the NAN frames.
+    vicon_frames_clean = {}
+    there_is_missing_point = False
+    vicon_skipped_frames_numbers = []
+
+    for idx in range(0, len(vicon_indices_list), 4):
+        for i in range(0, 4): # Check if there is NAN point in all 4 frames correlated to the single realsense frame
+            vicon_frame = list(trimmed_frames_vicon.keys())[idx+i]
+            points = trimmed_frames_vicon[vicon_frame]
+
+            for point in points:
+                if math.isnan(point.x) or math.isnan(point.y) or math.isnan(point.z):
+                    there_is_missing_point = True
+                    break
+
+        if there_is_missing_point:
+            # Reset the flag, and add the frame to the skipped frames list.
+            vicon_skipped_frames_numbers.append(int(idx / 4))
+            there_is_missing_point = False
+        else:
+            # Add the frames to the clean frames.
+            for i in range(4): # Add 4 frames!
+                vicon_frame = list(trimmed_frames_vicon.keys())[idx + i]
+                vicon_frames_clean[vicon_frame] = trimmed_frames_vicon[vicon_frame]
 
     # Clean the frames in realsense that have missing vicon correlated frames.
     final_frames_numbers_realsense = []
@@ -244,7 +340,7 @@ if __name__ == "__main__":
         first_frame_number_realsense = data[sub_num-1][position][angle]
         first_frame_number_vicon = data[sub_num-1][position]['Vicon']
 
-        realsense_frames_numbers, vicon_points = find_clean_frames_indices_on_realsense_and_vicon(bag_shoot_angle=angle, sub_name=sub_name, sub_position=position,
+        realsense_frames_numbers, vicon_points = find_clean_frames_indices_on_realsense_and_vicon_120_fps(bag_shoot_angle=angle, sub_name=sub_name, sub_position=position,
                                                          first_frame_number_realsense=first_frame_number_realsense,
                                                          first_frame_number_vicon=first_frame_number_vicon)
         print(sub_name + ", " + position + ", " + angle + ", " + "realsense frames len: " + str(len(realsense_frames_numbers))
