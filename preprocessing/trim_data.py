@@ -183,10 +183,8 @@ def trim_single_vicon_video(bag_shoot_angle: str, sub_name: str, sub_position: s
     of 39 points.
     :return: None.
     """
-    VICON_FPS = 30
+    VICON_FPS = 120
     img_array_120 = []
-    img_array_30 = []
-    counter = 0
 
     for i, frame in enumerate(list(vicon_points.keys())):
         # Get 39 Vicon points.
@@ -212,11 +210,6 @@ def trim_single_vicon_video(bag_shoot_angle: str, sub_name: str, sub_position: s
         height, width, layers = vicon_image.shape
         size = (width, height)
         img_array_120.append(vicon_image)
-
-        if (counter % 4) == 0:
-            img_array_30.append(vicon_image)
-
-        counter = counter + 1
 
     # Create the video
     out_120 = cv2.VideoWriter(

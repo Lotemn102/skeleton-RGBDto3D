@@ -178,6 +178,7 @@ class TestPreprocessing(unittest.TestCase):
         cap_1 = cv2.VideoCapture(RGB_VIDEO_PATH)
         cap_2 = cv2.VideoCapture(VICON_VIDEO_PATH)
 
+
         # Set-up two windows.
         cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
         cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
@@ -190,6 +191,10 @@ class TestPreprocessing(unittest.TestCase):
         while cap_1.isOpened():
             ret_2, frame_2 = cap_2.read()
             ret_1, frame_1 = cap_1.read()
+
+            #while counter < 4: # Read every 4th frames from vicon, since vicon FPS is 120
+            #    ret_2, frame_2 = cap_2.read()
+            #    counter = counter + 1
 
             if not ret_1 or not ret_2: # Loop
                 cap_1.set(1, 0) # Set current frame number to 0
