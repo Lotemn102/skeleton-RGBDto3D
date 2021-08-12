@@ -20,6 +20,9 @@ from realsense_data_reader import RealSenseReader
 from vicon_data_reader import VICONReader
 
 # ---------------------- Generate frames for manually detecting T-pose -------------------------------------------------
+"""
+For manually detecting the T-pose frames.
+"""
 def generate_realsense_frames(bag_path: str, bag_shoot_angle: str, sub_name: str, sub_position: str):
     """
     Extract frames from .bag file, and save them as images.
@@ -258,7 +261,10 @@ def aux_generate_vicon_frames():
                 print("Working on " + subject_name + ", " + subject_position)
                 generate_vicon_frames(csv_path=root + "/" + file)
 
-# ---------------------------------------- Create trimmed videos & csv file --------------------------------------------
+# --------------------------------------------- Create trimmed videos -------------------------------------------------
+"""
+For evaluating the synchronizing accuracy.
+"""
 
 def create_realsense_synchronized_video(bag_shoot_angle: str, sub_name: str, sub_position: str, first_frame_number: int,
                                         total_frames_number: int):
@@ -269,6 +275,7 @@ def create_realsense_synchronized_video(bag_shoot_angle: str, sub_name: str, sub
     :param sub_name: e.g 'Sub004'.
     :param sub_position: 'Stand', 'Squat', 'Tight', 'Left' or 'Right'.
     :param first_frame_number: The number manually picked.
+    :param total_frames_number: Number of frames this video should have.
     :return: None.
     """
     print("Starting creating video " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
@@ -295,6 +302,7 @@ def create_realsense_synchronized_video(bag_shoot_angle: str, sub_name: str, sub
     # frames. Please refer to:
     # - https://github.com/IntelRealSense/librealsense/issues/8288
     # - https://github.com/IntelRealSense/librealsense/issues/2102
+    # PADDING IS ONLY FOR DEBUGGING THE SYNCHRONIZING PROCESS.
     # Iterate through frames, find frames that are missing.
     previous_frame_number = int(cut_frames_files[0][:-4])
     padded_cut_frames_files = []

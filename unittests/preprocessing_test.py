@@ -7,7 +7,6 @@ import math
 from preprocessing.vicon_data_reader import VICONReader
 from preprocessing.realsense_data_reader import RealSenseReader
 
-
 class TestPreprocessing(unittest.TestCase):
     def test_read_data(self):
         REALSENSE_PATH = '../../Data/Sub013_Left_Back.bag'
@@ -88,13 +87,13 @@ class TestPreprocessing(unittest.TestCase):
 
     def test_sync(self):
         FPS = 30
-        SUB_NUMBER = '007'
+        SUB_NUMBER = '005'
         POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
-        POSITON = POSITIONS_LIST[0]
-        FIRST_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Back.avi'
-        SECOND_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Front.avi'
-        THIRD_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Side.avi'
-        VICON_VIDEO_PATH = '../preprocessing/clean/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Vicon.avi'
+        POSITON = POSITIONS_LIST[3]
+        FIRST_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Back.avi'
+        SECOND_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Front.avi'
+        THIRD_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Side.avi'
+        VICON_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Vicon.avi'
 
         cap_1 = cv2.VideoCapture(FIRST_VIDEO_PATH)
         cap_2 = cv2.VideoCapture(SECOND_VIDEO_PATH)
@@ -118,6 +117,7 @@ class TestPreprocessing(unittest.TestCase):
             ret_1, frame_1 = cap_1.read()
             ret_2, frame_2 = cap_2.read()
             ret_3, frame_3 = cap_3.read()
+            ret_4, frame_4 = cap_4.read()
 
             while counter < 4: # Read every 4th frames from vicon, since vicon FPS is 120
                 ret_4, frame_4 = cap_4.read()
@@ -163,7 +163,62 @@ class TestPreprocessing(unittest.TestCase):
                 cv2.imshow('VICON', img_4)
                 cv2.waitKey(FPS)
 
+    def test_trim(self):
+        FPS = 30
+        SUB_NUMBER = '005'
+        POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
+        ANGLE_LIST = ['Back', 'Front', 'Side']
+        POSITON = POSITIONS_LIST[3]
+        ANGLE = ANGLE_LIST[1]
+        RGB_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
+            SUB_NUMBER) + '_' + POSITON + '_' + ANGLE + '.avi'
+        VICON_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
+            SUB_NUMBER) + '_' + POSITON + '_' + ANGLE + '_Vicon_120.avi'
 
+        cap_1 = cv2.VideoCapture(RGB_VIDEO_PATH)
+        cap_2 = cv2.VideoCapture(VICON_VIDEO_PATH)
+
+        # Set-up two windows.
+        cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
+        cv2.moveWindow("RGB", 0, 0, )
+        cv2.moveWindow("VICON", 1700, 0, )
+
+        counter = 0
+        first_iteration = True
+
+        while cap_1.isOpened():
+            ret_2, frame_2 = cap_2.read()
+            ret_1, frame_1 = cap_1.read()
+
+            if not ret_1 or not ret_2: # Loop
+                cap_1.set(1, 0) # Set current frame number to 0
+                cap_2.set(1, 0) # Set current frame number to 0
+                continue
+
+            if first_iteration:
+                scale_percent = 90
+                width_realsense = int(frame_1.shape[1] * scale_percent / 100)
+                height_realsense = int(frame_1.shape[0] * scale_percent / 100)
+                dims_realsense = (width_realsense, height_realsense)
+
+                width_vicon = int(frame_2.shape[1] * scale_percent / 100)
+                height_vicon = int(frame_2.shape[0] * scale_percent / 100)
+                dims_vicon = (width_vicon, height_vicon)
+                first_iteration = False
+
+            frame_1 = cv2.resize(frame_1, dims_realsense, interpolation=cv2.INTER_AREA)
+            frame_2 = cv2.resize(frame_2, dims_vicon, interpolation=cv2.INTER_AREA)
+
+            if not ret_1 or not ret_2:
+                cap_1.set(1, 0)  # Set current frame number to 0
+                cap_2.set(1, 0)  # Set current frame number to 0
+            else:
+                img_1 = cv2.cvtColor(frame_1, cv2.COLOR_RGB2BGR)
+                img_2 = cv2.cvtColor(frame_2, cv2.COLOR_RGB2BGR)
+                cv2.imshow('RGB', img_1)
+                cv2.imshow('VICON', img_2)
+                cv2.waitKey(FPS)
 
 
 
