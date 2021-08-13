@@ -7,8 +7,15 @@ import math
 from preprocessing.vicon_data_reader import VICONReader
 from preprocessing.realsense_data_reader import RealSenseReader
 
+from preprocessing.trim_data import sync_120_fps
+
 class TestPreprocessing(unittest.TestCase):
     def test_read_data(self):
+        """
+       For visual manual evaluation.
+
+       :return: None.
+       """
         REALSENSE_PATH = '../../Data/Sub013_Left_Back.bag'
         VICON_PATH = '../../Data/Sub007 Stand.csv'
         REALSENSE_FRAME_RATE = 30
@@ -45,7 +52,7 @@ class TestPreprocessing(unittest.TestCase):
             frames = pipeline.wait_for_frames()
             color_frame = frames.get_color_frame()
             realsense_image = np.asanyarray(color_frame.get_data())
-            realsense_image = np.rot90(realsense_image, k=3) # If image is rotated by default
+            realsense_image = np.rot90(realsense_image, k=3)
 
             # Read Vicon points
             try:
@@ -75,17 +82,21 @@ class TestPreprocessing(unittest.TestCase):
                 vicon_image = cv2.circle(vicon_image, ((int(z) + 300), (int(x) + 400)), radius=0, color=(0, 0, 255),
                                          thickness=10) # Coordinates offsets are manually selected to center the object.
 
-            vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE) # The vicon points are also rotated
+            #vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_90_COUNTERCLOCKWISE) # The vicon points are also rotated
             # by default.
 
             # Render realsense image and vicon image.
-            #cv2.imshow("RGB Stream", realsense_image)
+            cv2.imshow("RGB Stream", realsense_image)
             cv2.imshow("Vicon Stream", vicon_image)
-            key = cv2.waitKey(1)
-            t = (VICON_FRAME_RATE / REALSENSE_FRAME_RATE)
+            cv2.waitKey(1)
             current_frame = current_frame + (VICON_FRAME_RATE / REALSENSE_FRAME_RATE)
 
     def test_sync(self):
+        """
+        For visual manual evaluation.
+
+        :return: None.
+        """
         FPS = 30
         SUB_NUMBER = '005'
         POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
@@ -164,6 +175,11 @@ class TestPreprocessing(unittest.TestCase):
                 cv2.waitKey(FPS)
 
     def test_trim(self):
+        """
+        For visual manual evaluation.
+
+        :return: None.
+        """
         FPS = 30
         SUB_NUMBER = '005'
         POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
@@ -177,7 +193,6 @@ class TestPreprocessing(unittest.TestCase):
 
         cap_1 = cv2.VideoCapture(RGB_VIDEO_PATH)
         cap_2 = cv2.VideoCapture(VICON_VIDEO_PATH)
-
 
         # Set-up two windows.
         cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
@@ -226,6 +241,173 @@ class TestPreprocessing(unittest.TestCase):
                 cv2.imshow('RGB', img_1)
                 cv2.imshow('VICON', img_2)
                 cv2.waitKey(FPS)
+
+    def test_trim_perfect_data(self):
+        """
+        Perfect data.
+
+        :return: None.
+        """
+        frames_numbers = []
+
+        # Generate 10 fake images.
+        for i in range(1, 5):
+            frames_numbers.append(str(i) + '.png')
+
+        frames_realsense, frames_vicon = sync_120_fps(bag_shoot_angle='random', sub_name='random',
+                                                      sub_position='random', first_frame_number_realsense=1,
+                                                      first_frame_number_vicon=1, test_realsense=frames_numbers,
+                                                      test_csv='../unittests/assets/test1.csv')
+        self.assertEqual(len(frames_realsense), 4)
+        self.assertEqual(len(frames_vicon), 16)
+
+    def test_trim_missing_realsense(self):
+        """
+        Missing realsense frames.
+
+        :return: None.
+        """
+        frames_numbers = []
+
+        # Generate 10 fake images.
+        for i in range(1, 5):
+            frames_numbers.append(str(i) + '.png')
+
+        frames_numbers.remove('3.png')
+
+        frames_realsense, frames_vicon = sync_120_fps(bag_shoot_angle='random', sub_name='random',
+                                                      sub_position='random', first_frame_number_realsense=1,
+                                                      first_frame_number_vicon=1, test_realsense=frames_numbers,
+                                                      test_csv='../unittests/assets/test1.csv')
+        self.assertEqual(len(frames_realsense), 3)
+        self.assertEqual(len(frames_vicon), 12)
+
+    def test_trim_missing_vicon(self):
+        """
+        Missing vicon frames.
+
+        :return: None.
+        """
+
+        frames_numbers = []
+
+        # Generate 10 fake images.
+        for i in range(1, 5):
+            frames_numbers.append(str(i) + '.png')
+
+        frames_realsense, frames_vicon = sync_120_fps(
+            bag_shoot_angle='random', sub_name='random',
+            sub_position='random', first_frame_number_realsense=1,
+            first_frame_number_vicon=1, test_realsense=frames_numbers,
+            test_csv='../unittests/assets/test2.csv')
+        self.assertEqual(len(frames_realsense), 3)
+        self.assertEqual(len(frames_vicon), 12)
+
+    def test_trim_missing_realsense_and_vicon(self):
+        """
+        Missing both realsense and vicon frames.
+
+        :return: None.
+        """
+
+        frames_numbers = []
+
+        # Generate 10 fake images.
+        for i in range(1, 5):
+            frames_numbers.append(str(i) + '.png')
+
+        frames_numbers.remove('4.png')
+
+        frames_realsense, frames_vicon = sync_120_fps(
+            bag_shoot_angle='random', sub_name='random',
+            sub_position='random', first_frame_number_realsense=1,
+            first_frame_number_vicon=1, test_realsense=frames_numbers,
+            test_csv='../unittests/assets/test2.csv')
+        self.assertEqual(len(frames_realsense), 2)
+        self.assertEqual(len(frames_vicon), 8)
+
+    def test_sync_all(self):
+        REALSENSE_FPS = 30
+        VICON_FPS = 120
+
+        for i in range(5, 6):
+            subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
+
+            for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
+
+                if position != 'Left':
+                    continue
+
+                for angle in ['Front', 'Back', 'Side']:
+                    try:
+                        RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
+                                   subject_name + '_' + position + '_' + angle +'.avi'
+                        CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
+                                   + subject_name + '_' + position + '_' + angle +'.csv'
+
+                        # Init the VICON reader and read the points.
+                        vicon_reader = VICONReader(vicon_file_path=CSV_PATH)
+                        vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+                        index = 0
+
+                        cap_1 = cv2.VideoCapture(RGB_PATH)
+
+                        # Set-up two windows.
+                        cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
+                        cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
+                        cv2.moveWindow("RGB", 0, 0, )
+                        cv2.moveWindow("VICON", 700, 0, )
+
+                        first_iteration = True
+
+                        while cap_1.isOpened():
+                            ret_1, frame_1 = cap_1.read()
+
+                            # Create an empty image to write the vicon points on in later.
+                            current_frame = list(vicon_points.keys())[index]
+                            blank = np.zeros(shape=(640, 480, 3), dtype=np.uint8)
+                            vicon_image = cv2.cvtColor(blank, cv2.COLOR_RGB2BGR)
+                            current_frame_points = vicon_points[current_frame]
+
+                            for i, point in enumerate(current_frame_points):
+                                x = point.x
+                                y = point.y
+                                z = point.z
+
+                                if math.isnan(x) or math.isnan(y) or math.isnan(z):
+                                    # Skip this point for the moment
+                                    print("empty point")
+                                    continue
+
+                                # Scale the coordinates so they will fit the image.
+                                x = x / 5
+                                y = y / 5
+                                # Draw the point on the blank image (orthographic projection).
+                                vicon_image = cv2.circle(vicon_image, ((int(x) + 170), (int(y) + 120)), radius=0,
+                                                         color=(0, 0, 255),
+                                                         thickness=10)  # Coordinates offsets are manually selected to center the object.
+
+                            index += 1
+
+                            if first_iteration:
+                                scale_percent = 90
+                                width_realsense = int(frame_1.shape[1] * scale_percent / 100)
+                                height_realsense = int(frame_1.shape[0] * scale_percent / 100)
+                                dims_realsense = (width_realsense, height_realsense)
+                                first_iteration = False
+
+                            frame_1 = cv2.resize(frame_1, dims_realsense, interpolation=cv2.INTER_AREA)
+                            vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_180) # OpenCV origin is TOP-LEFT, so image
+                            # needs to be rotated 180 degrees.
+
+                            img_1 = cv2.cvtColor(frame_1, cv2.COLOR_RGB2BGR)
+                            cv2.imshow('RGB', img_1)
+                            cv2.imshow('VICON', vicon_image)
+                            cv2.waitKey(REALSENSE_FPS)
+                    except:
+                        continue
+
+
 
 
 

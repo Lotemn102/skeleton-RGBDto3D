@@ -6,7 +6,7 @@ Pipeline
     1. Extract all frames of RealSense video as images using 'generate_realsense_frames()'.
     2. Extract all frames of Vicon points as images (orthographic projected) using 'generate_vicon_frames()'.
     3. MANUALLY find the first frame in the Vicon frames, and it's correlated frame in RealSense data. Save the
-        data in 'frames_sync.json'.
+        data in 'assets/frames_sync.json'.
     4. Cut the videos by calling 'generate_synchronized_videos_for_all()'.
 """
 
@@ -70,7 +70,7 @@ def generate_realsense_frames(bag_path: str, bag_shoot_angle: str, sub_name: str
 
         # Convert color_frame to numpy array to render image in opencv.
         color_image = np.asanyarray(color_frame.get_data())
-        color_image = np.rot90(color_image, k=3)
+        color_image = np.rot90(color_image, k=3) # OpenCV origin is TOP-LEFT, so we to rotate the image 180 degrees.
 
         # Save image.
         cv2.imwrite(save_path + "/" + str(frames.frame_number) + '.png', color_image)

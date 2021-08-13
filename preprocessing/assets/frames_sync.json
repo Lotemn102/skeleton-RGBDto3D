@@ -299,67 +299,67 @@
   {
     "sub_name": "Sub010",
     "Squat": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 6701,
+      "Front": 18195,
+      "Side": 18467,
+      "Vicon": 1472
     },
     "Stand": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 737,
+      "Front": 6269,
+      "Side": 6541,
+      "Vicon": 1287
     },
     "Tight": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 3886,
+      "Front": 12565,
+      "Side": 12838,
+      "Vicon": 1149
     },
     "Left": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 3126,
+      "Front": 11046,
+      "Side": 11317,
+      "Vicon": 1462
     },
     "Right": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 2061,
+      "Front": 8915,
+      "Side": 9186,
+      "Vicon": 1546
     }
   },
   {
     "sub_name": "Sub011",
     "Squat": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 11370,
+      "Front": 3575,
+      "Side": 4057,
+      "Vicon": 1133
     },
     "Stand": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 1372,
+      "Front": 2714,
+      "Side": 2894,
+      "Vicon": 1554
     },
     "Tight": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 9977,
+      "Front": 791,
+      "Side": 1279,
+      "Vicon": 1220
     },
     "Left": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 2930,
+      "Front": 5833,
+      "Side": 6014,
+      "Vicon": 1057
     },
     "Right": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 2319,
+      "Front": 4608,
+      "Side": 4793,
+      "Vicon": 1250
     }
   },
   {
