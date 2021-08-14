@@ -38,8 +38,6 @@ def generate_realsense_frames(bag_path: str, bag_shoot_angle: str, sub_name: str
         REALSENSE_FPS = 30
         realsense_reader = RealSenseReader(bag_file_path=bag_path, type='RGB', frame_rate=REALSENSE_FPS)
         pipeline = realsense_reader.setup_pipeline()
-        print('Skipped.')
-        return
     except:
         # Some videos were recorded with FPS of 15.
         REALSENSE_FPS = 15
@@ -47,7 +45,6 @@ def generate_realsense_frames(bag_path: str, bag_shoot_angle: str, sub_name: str
         pipeline = realsense_reader.setup_pipeline()
 
     cv2.namedWindow("RGB Stream", cv2.WINDOW_AUTOSIZE)
-
 
     # Get frameset
     frames = pipeline.wait_for_frames()
@@ -466,5 +463,7 @@ def generate_synchronized_videos_for_all():
 
 
 if __name__ == "__main__":
-    generate_synchronized_videos_for_all()
+    #generate_synchronized_videos_for_all()
+    generate_realsense_frames(bag_path='../../Data/Sub014_Left_Back.bag', bag_shoot_angle='Back', sub_name='Sub014',
+                              sub_position='Left')
 
