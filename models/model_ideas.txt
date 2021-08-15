@@ -1,0 +1,5 @@
+- RNN (LSTM/GRU): How can we combine convolutional layers in it? https://arxiv.org/pdf/1808.03867.pdf
+- ResNet
+- Transformers (?)
+- 2 sub-CNNs like OpenPose
+- Many sub-CNNs like the paper Ron sent
