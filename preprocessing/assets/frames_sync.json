@@ -167,34 +167,34 @@
   {
     "sub_name": "Sub006",
     "Squat": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 90949,
+      "Front": 16030,
+      "Side": 16171,
+      "Vicon": 1280
     },
     "Stand": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": "No T pose",
+      "Front": 6054,
+      "Side": 6199,
+      "Vicon": 2370
     },
     "Tight": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 88353,
+      "Front": 13955,
+      "Side": 13567,
+      "Vicon": 1393
     },
     "Left": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 85553,
+      "Front": 10633,
+      "Side": 11361,
+      "Vicon": 3779
     },
     "Right": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 84056,
+      "Front": 9136,
+      "Side": 9278,
+      "Vicon": 1541
     }
   },
   {

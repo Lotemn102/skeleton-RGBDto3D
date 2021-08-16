@@ -2,6 +2,7 @@ import unittest
 import cv2
 import numpy as np
 import math
+import os
 
 
 from preprocessing.vicon_data_reader import VICONReader
@@ -101,7 +102,7 @@ class TestPreprocessing(unittest.TestCase):
         #  different resolutions of color and depth streams
         config = rs.config()
 
-        rs.config.enable_device_from_file(config, 'D:/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Left_Back.bag')
+        rs.config.enable_device_from_file(config, '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Left_Back.bag')
 
         # Set the format & type.
         config.enable_stream(stream_type=rs.stream.color, width=640, height=480, format=rs.format.rgb8, framerate=30)
@@ -506,7 +507,7 @@ class TestPreprocessing(unittest.TestCase):
             cv2.imshow('Color', color_image)
             cv2.waitKey(1)
 
-    def test_sync_all(self):
+    def test_sync_all_videos(self):
         REALSENSE_FPS = 30
         VICON_FPS = 30
 
@@ -517,10 +518,15 @@ class TestPreprocessing(unittest.TestCase):
 
                 for angle in ['Front', 'Back', 'Side']:
 
+                    if subject_name != 'Sub004' or position != 'Stand' or angle != 'Front':
+                        continue
+
                     print(subject_name + ", " + position + ", " + angle)
 
                     RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
                                subject_name + '_' + position + '_' + angle +'_RGB.avi'
+                    DEPTH_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
+                               subject_name + '_' + position + '_' + angle +'_Depth.avi'
                     CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
                                + subject_name + '_' + position + '_' + angle +'.csv'
 
@@ -530,22 +536,26 @@ class TestPreprocessing(unittest.TestCase):
                         vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
                     except:
                         continue
-                    print("Vicon frames: " + str(len(vicon_points.keys())))
                     index = 0
 
                     cap_1 = cv2.VideoCapture(RGB_PATH)
+                    cap_2 = cv2.VideoCapture(DEPTH_PATH)
 
                     # Set-up two windows.
                     cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
                     cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
+                    cv2.namedWindow("DEPTH", cv2.WINDOW_AUTOSIZE)
                     cv2.moveWindow("RGB", 0, 0, )
                     cv2.moveWindow("VICON", 700, 0, )
+                    cv2.moveWindow("DEPTH", 0, 700, )
 
                     first_iteration = True
                     counter = 0
 
                     while cap_1.isOpened():
                         ret_1, frame_1 = cap_1.read()
+                        ret_2, frame_2 = cap_2.read()
+                        frame_2 = cv2.cvtColor(frame_2, cv2.COLOR_BGR2GRAY) # The depth video is in grayscale
 
                         if index >= len(list(vicon_points.keys())):
                             break
@@ -583,18 +593,111 @@ class TestPreprocessing(unittest.TestCase):
                             first_iteration = False
 
                         frame_1 = cv2.resize(frame_1, dims_realsense, interpolation=cv2.INTER_AREA)
+                        frame_2 = cv2.resize(frame_2, dims_realsense, interpolation=cv2.INTER_AREA)
                         vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_180) # OpenCV origin is TOP-LEFT, so image
                         # needs to be rotated 180 degrees.
+                        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(frame_2, alpha=0.03),
+                                                           cv2.COLORMAP_JET)
 
                         img_1 = cv2.cvtColor(frame_1, cv2.COLOR_RGB2BGR)
+                        img_2 = cv2.cvtColor(depth_colormap, cv2.COLOR_RGB2BGR)
                         cv2.imshow('RGB', img_1)
+                        cv2.imshow('DEPTH', img_2)
                         cv2.imshow('VICON', vicon_image)
                         cv2.waitKey(REALSENSE_FPS)
                         counter = counter + 1
 
-                    print("RealSense frames: " + str(counter))
+    def test_sync_all_frames(self):
+        REALSENSE_FPS = 30
+        VICON_FPS = 30
 
+        for i in range(4, 5):
+            subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
 
+            for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
+
+                for angle in ['Front', 'Back', 'Side']:
+
+                    if subject_name != 'Sub004' or position != 'Stand' or angle != 'Front':
+                        continue
+
+                    print(subject_name + ", " + position + ", " + angle)
+
+                    RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/rgb_frames/'
+                    DEPTH_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/depth_frames/'
+                    CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
+                               + subject_name + '_' + position + '_' + angle +'.csv'
+
+                    # Init the VICON reader and read the points.
+                    try:
+                        vicon_reader = VICONReader(vicon_file_path=CSV_PATH)
+                        vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+                    except:
+                        continue
+                    index = 0
+
+                    # Set-up two windows.
+                    cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
+                    cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
+                    cv2.namedWindow("DEPTH", cv2.WINDOW_AUTOSIZE)
+                    cv2.moveWindow("RGB", 0, 0, )
+                    cv2.moveWindow("VICON", 700, 0, )
+                    cv2.moveWindow("DEPTH", 0, 700, )
+
+                    counter = 0
+
+                    # All rgb frames
+                    all_frames_files_realsense_rgb = os.listdir(RGB_PATH)
+                    all_frames_files_realsense_rgb.remove('log.json')
+                    all_frames_files_realsense_rgb = sorted(all_frames_files_realsense_rgb, key=lambda x: int(x[:-4]))
+
+                    # All depth frames
+                    all_frames_files_realsense_depth = os.listdir(DEPTH_PATH)
+                    all_frames_files_realsense_depth.remove('log.json')
+                    all_frames_files_realsense_depth = sorted(all_frames_files_realsense_depth, key=lambda x: int(x[:-4]))
+
+                    while 1:
+
+                        if index >= len(list(vicon_points.keys())):
+                            break
+
+                        # Create an empty image to write the vicon points on in later.
+                        current_frame = list(vicon_points.keys())[index]
+                        blank = np.zeros(shape=(640, 480, 3), dtype=np.uint8)
+                        vicon_image = cv2.cvtColor(blank, cv2.COLOR_RGB2BGR)
+                        current_frame_points = vicon_points[current_frame]
+
+                        for i, point in enumerate(current_frame_points):
+                            x = point.x
+                            y = point.y
+                            z = point.z
+
+                            if math.isnan(x) or math.isnan(y) or math.isnan(z):
+                                # Skip this point for the moment
+                                continue
+
+                            # Scale the coordinates so they will fit the image.
+                            x = x / 5
+                            y = y / 5
+                            z = z / 5
+                            # Draw the point on the blank image (orthographic projection).
+                            vicon_image = cv2.circle(vicon_image, ((int(x) + 170), (int(z) + 120)), radius=0,
+                                                     color=(0, 0, 255),
+                                                     thickness=10)  # Coordinates offsets are manually selected to center the object.
+
+                        vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_180) # OpenCV origin is TOP-LEFT, so image
+                        rgb_image = cv2.imread(RGB_PATH + '/' + all_frames_files_realsense_rgb[index])
+                        depth_image = np.fromfile(DEPTH_PATH + '/' + all_frames_files_realsense_depth[index], dtype='int16', sep="")
+                        depth_image = depth_image.reshape([848, 480])
+                        depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03),
+                                                           cv2.COLORMAP_JET)
+
+                        cv2.imshow('RGB', rgb_image)
+                        cv2.imshow('DEPTH', depth_colormap)
+                        cv2.imshow('VICON', vicon_image)
+                        cv2.waitKey(REALSENSE_FPS)
+                        counter = counter + 1
+                        index += 1
 
 
 

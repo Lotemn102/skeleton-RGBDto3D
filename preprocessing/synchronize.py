@@ -15,6 +15,7 @@ import numpy as np
 import os
 import math
 import json
+import pyrealsense2 as rs
 
 from realsense_data_reader import RealSenseReader
 from vicon_data_reader import VICONReader
@@ -124,29 +125,46 @@ def generate_depth_frames_realsense(bag_path: str, bag_shoot_angle: str, sub_nam
         realsense_reader = RealSenseReader(bag_file_path=bag_path, type=type, frame_rate=REALSENSE_FPS)
         pipeline = realsense_reader.setup_pipeline()
 
-    # Get frameset
-    frames = pipeline.wait_for_frames()
-    first_frame = frames.frame_number
-    current_frame = 0
-
     # Create save path.
     save_path = 'frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/'
+
+    # Create align object to align depth frames to RGB frames.
+    align_to = rs.stream.color
+    align = rs.align(align_to)
 
     if not os.path.isdir(save_path):
         os.makedirs(save_path)
 
-    while current_frame != first_frame:
+    if sub_position == 'Tightstand':
+        sub_position = 'Tight'
+
+    # Get all frames names from the RGB
+    all_frames_files = os.listdir('frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/')
+    all_frames_files.remove('log.json')
+    all_frames_files = sorted(all_frames_files, key=lambda x: int(x[:-4]))
+    current_frame_index = 0
+
+    while current_frame_index < len(all_frames_files):
         # Get frameset.
         frames = pipeline.wait_for_frames()
-        current_frame = frames.frame_number
 
-        depth_frame = frames.get_depth_frame()
-        depth_image = np.asanyarray(depth_frame.get_data())
-        depth_image = np.rot90(depth_image, k=3)
-        depth_image = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.1), cv2.COLORMAP_JET)
+        # Align depth frames to the color ones. The RealSense has 2 sensors: RGB & depth. They are not 100% aligned
+        # by default.
+        aligned_frames = align.process(frames)
+
+        # Get aligned frames
+        aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
+        aligned_depth_image = np.asanyarray(aligned_depth_frame.get_data(), dtype=np.uint16)
+        aligned_depth_image = np.rot90(aligned_depth_image, k=3)
 
         # Save image.
-        cv2.imwrite(save_path + "/" + str(frames.frame_number) + '.png', depth_image)
+        # As described here: https://github.com/IntelRealSense/librealsense/issues/8649#issuecomment-804792092
+        # You can't save RealSense depth images in png format, so i used raw data image.
+        file_path = save_path + "/" + all_frames_files[current_frame_index]
+        file_path = file_path[:-4]
+        file_path = file_path + '.raw'
+        aligned_depth_image.astype('int16').tofile(file_path)
+        current_frame_index += 1
 
     # Read all frames to find first one, last one and number of frames.
     all_frames = os.listdir(save_path)
@@ -244,10 +262,11 @@ def aux_generate_realsense_frames():
     :return: None.
     """
 
-    for root, dirs, files in os.walk("D:/Movement Sense Research/Vicon Validation Study"):
+    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
         for file in files:
             if file.endswith(".bag"):
-                if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file:
+                if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file or 'Sub004' in file or 'Sub005' in file or\
+                        'Sub006' in file or 'Sub007' in file:
                     continue
 
                 if 'Extra' in file or 'Extra' in dirs or 'Extra' in root:
@@ -259,6 +278,7 @@ def aux_generate_realsense_frames():
                 remove_extension = file[:-4]
                 if 'withoutlight' in remove_extension:
                     continue
+
                 splitted = remove_extension.split('_')
                 subject_name = [e for e in splitted if 'Sub' in e][0]
                 subject_number = int(subject_name[3:])
@@ -295,7 +315,7 @@ def aux_generate_realsense_frames():
                                           bag_shoot_angle=shooting_angle, sub_position=subject_position)
 
 def aux_generate_vicon_frames():
-    for root, dirs, files in os.walk("D:/Movement Sense Research/Vicon Validation Study"):
+    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/"):
         for file in files:
             if file.endswith(".csv"):
                 if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file:
@@ -330,10 +350,13 @@ def aux_generate_vicon_frames():
                         subject_position = e
                         break
 
+                if subject_name != "Sub006":
+                    continue
+
                 print("Working on " + subject_name + ", " + subject_position)
                 generate_vicon_frames(csv_path=root + "/" + file)
 
 
 if __name__ == "__main__":
-    aux_generate_vicon_frames()
+    aux_generate_realsense_frames()
 
