@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 
-from structs import Point
+from preprocessing.structs import Point
 
 
 KEYPOINTS_NAMES = ['LFHD', 'RFHD', 'LBHD', 'RBHD', 'C7', 'T10', 'CLAV', 'STRN', 'RBAK', 'LSHO', 'LUPA', 'LELB',

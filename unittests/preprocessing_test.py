@@ -6,11 +6,11 @@ import math
 
 from preprocessing.vicon_data_reader import VICONReader
 from preprocessing.realsense_data_reader import RealSenseReader
+from preprocessing.trim_data import sync_30_fps
 
-from preprocessing.trim_data import sync_120_fps
 
 class TestPreprocessing(unittest.TestCase):
-    def test_read_data(self):
+    def test_RGB_and_Vicon_data(self):
         """
        For visual manual evaluation.
 
@@ -72,7 +72,6 @@ class TestPreprocessing(unittest.TestCase):
 
                 if math.isnan(x) or math.isnan(y) or math.isnan(z):
                     # Skip this point for the moment
-                    print("empty point")
                     continue
 
                 # Scale the coordinates so they will fit the image.
@@ -90,6 +89,119 @@ class TestPreprocessing(unittest.TestCase):
             cv2.imshow("Vicon Stream", vicon_image)
             cv2.waitKey(1)
             current_frame = current_frame + (VICON_FRAME_RATE / REALSENSE_FRAME_RATE)
+
+    def test_read_align_data(self):
+        # First import the library
+        import pyrealsense2 as rs
+
+        # Create a pipeline
+        pipeline = rs.pipeline()
+
+        # Create a config and configure the pipeline to stream
+        #  different resolutions of color and depth streams
+        config = rs.config()
+
+        rs.config.enable_device_from_file(config, 'D:/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Left_Back.bag')
+
+        # Set the format & type.
+        config.enable_stream(stream_type=rs.stream.color, width=640, height=480, format=rs.format.rgb8, framerate=30)
+        config.enable_stream(stream_type=rs.stream.depth, width=848, height=480, format=rs.format.z16, framerate=30)
+        profile = pipeline.start(config)
+
+        # Getting the depth sensor's depth scale (see rs-align example for explanation)
+        depth_sensor = profile.get_device().first_depth_sensor()
+        depth_scale = depth_sensor.get_depth_scale()
+        print("Depth Scale is: ", depth_scale)
+
+        # We will be removing the background of objects more than
+        #  clipping_distance_in_meters meters away
+        clipping_distance_in_meters = 5  # 1 meter
+        clipping_distance = clipping_distance_in_meters / depth_scale
+
+        # Create an align object
+        # rs.align allows us to perform alignment of depth frames to others frames
+        # The "align_to" is the stream type to which we plan to align depth frames.
+        align_to = rs.stream.color
+        align = rs.align(align_to)
+
+        # Streaming loop
+        try:
+            while True:
+                # Get frameset of color and depth
+                frames = pipeline.wait_for_frames()
+                # frames.get_depth_frame() is a 640x360 depth image
+
+                # Align the depth frame to color frame
+                aligned_frames = align.process(frames)
+
+                # Get aligned frames
+                aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
+                color_frame = aligned_frames.get_color_frame()
+
+                # Validate that both frames are valid
+                if not aligned_depth_frame or not color_frame:
+                    continue
+
+                depth_image = np.asanyarray(aligned_depth_frame.get_data())
+                color_image = np.asanyarray(color_frame.get_data())
+
+                color_image = np.rot90(color_image, k=3)
+                depth_image = np.rot90(depth_image, k=3)
+
+                # Remove background - Set pixels further than clipping_distance to grey
+                grey_color = 153
+                depth_image_3d = np.dstack(
+                    (depth_image, depth_image, depth_image))  # depth image is 1 channel, color is 3 channels
+                bg_removed = np.where((depth_image_3d > clipping_distance) | (depth_image_3d <= 0), grey_color,
+                                      color_image)
+
+                # Render images:
+                #   depth align to color on left
+                #   depth on right
+                depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03), cv2.COLORMAP_JET)
+                images = np.hstack((bg_removed, depth_colormap))
+
+                cv2.namedWindow('Align Example', cv2.WINDOW_AUTOSIZE)
+                cv2.imshow('Align Example', images)
+                cv2.waitKey(1)
+        finally:
+            pipeline.stop()
+
+    def test_depth_data(self):
+        """
+       For visual manual evaluation.
+
+       :return: None.
+       """
+        REALSENSE_PATH = 'D:/Movement Sense Research/Vicon Validation Study/Sub013/Sub013_Back/Sub013_Left_Back.bag'
+        REALSENSE_FRAME_RATE = 30
+
+        # Init the realsense reader and get the pipeline.
+        try:
+            # Most of the videos were recorded with FPS of 30.
+            realsense_reader = RealSenseReader(bag_file_path=REALSENSE_PATH, type='DEPTH', frame_rate=REALSENSE_FRAME_RATE)
+            pipeline = realsense_reader.setup_pipeline()
+            print(30)
+        except:
+            # Some videos were recorded with FPS of 15.
+            REALSENSE_FRAME_RATE = 15
+            realsense_reader = RealSenseReader(bag_file_path=REALSENSE_PATH, type='DEPTH', frame_rate=REALSENSE_FRAME_RATE)
+            pipeline = realsense_reader.setup_pipeline()
+            print(15)
+
+        # Set-up two windows.
+        cv2.namedWindow("Depth Stream", cv2.WINDOW_AUTOSIZE)
+
+        # Start playing the videos.
+        while True:
+            frames = pipeline.wait_for_frames()
+            depth_frame = frames.get_depth_frame()
+            depth_image = np.asanyarray(depth_frame.get_data())
+            depth_image = np.rot90(depth_image, k=3)
+            #depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.1), cv2.COLORMAP_JET)
+            # Render realsense image and vicon image.
+            cv2.imshow("Depth Stream", depth_image)
+            cv2.waitKey(2)
 
     def test_sync(self):
         """
@@ -254,7 +366,7 @@ class TestPreprocessing(unittest.TestCase):
         for i in range(1, 5):
             frames_numbers.append(str(i) + '.png')
 
-        frames_realsense, frames_vicon = sync_120_fps(bag_shoot_angle='random', sub_name='random',
+        frames_realsense, frames_vicon = sync_30_fps(bag_shoot_angle='random', sub_name='random',
                                                       sub_position='random', first_frame_number_realsense=1,
                                                       first_frame_number_vicon=1, test_realsense=frames_numbers,
                                                       test_csv='../unittests/assets/test1.csv')
@@ -275,7 +387,7 @@ class TestPreprocessing(unittest.TestCase):
 
         frames_numbers.remove('3.png')
 
-        frames_realsense, frames_vicon = sync_120_fps(bag_shoot_angle='random', sub_name='random',
+        frames_realsense, frames_vicon = sync_30_fps(bag_shoot_angle='random', sub_name='random',
                                                       sub_position='random', first_frame_number_realsense=1,
                                                       first_frame_number_vicon=1, test_realsense=frames_numbers,
                                                       test_csv='../unittests/assets/test1.csv')
@@ -295,7 +407,7 @@ class TestPreprocessing(unittest.TestCase):
         for i in range(1, 5):
             frames_numbers.append(str(i) + '.png')
 
-        frames_realsense, frames_vicon = sync_120_fps(
+        frames_realsense, frames_vicon = sync_30_fps(
             bag_shoot_angle='random', sub_name='random',
             sub_position='random', first_frame_number_realsense=1,
             first_frame_number_vicon=1, test_realsense=frames_numbers,
@@ -318,7 +430,7 @@ class TestPreprocessing(unittest.TestCase):
 
         frames_numbers.remove('4.png')
 
-        frames_realsense, frames_vicon = sync_120_fps(
+        frames_realsense, frames_vicon = sync_30_fps(
             bag_shoot_angle='random', sub_name='random',
             sub_position='random', first_frame_number_realsense=1,
             first_frame_number_vicon=1, test_realsense=frames_numbers,
@@ -326,86 +438,161 @@ class TestPreprocessing(unittest.TestCase):
         self.assertEqual(len(frames_realsense), 2)
         self.assertEqual(len(frames_vicon), 8)
 
+    def test_depth_vs_aligned_depth(self):
+        # First import the library
+        import pyrealsense2 as rs
+
+        # Create a pipeline
+        pipeline = rs.pipeline()
+
+        # Create a config and configure the pipeline to stream
+        #  different resolutions of color and depth streams
+        config = rs.config()
+
+        rs.config.enable_device_from_file(config,
+                                          'D:/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Left_Back.bag')
+
+        # Set the format & type.
+        config.enable_stream(stream_type=rs.stream.color, width=640, height=480, format=rs.format.rgb8, framerate=30)
+        config.enable_stream(stream_type=rs.stream.depth, width=848, height=480, format=rs.format.z16, framerate=30)
+        profile = pipeline.start(config)
+
+        # Getting the depth sensor's depth scale (see rs-align example for explanation)
+        depth_sensor = profile.get_device().first_depth_sensor()
+        depth_scale = depth_sensor.get_depth_scale()
+        print("Depth Scale is: ", depth_scale)
+
+        # Create an align object
+        # rs.align allows us to perform alignment of depth frames to others frames
+        # The "align_to" is the stream type to which we plan to align depth frames.
+        align_to = rs.stream.color
+        align = rs.align(align_to)
+
+        # Streaming loop
+        while True:
+            # Get frameset of color and depth
+            frames = pipeline.wait_for_frames()
+
+            # Read color frames.
+            color_frame = frames.get_color_frame()
+            color_image = np.asanyarray(color_frame.get_data())
+            color_image = np.rot90(color_image, k=3)
+
+            # Read depth frames.
+            depth_frame = frames.get_depth_frame()
+            depth_image = np.asanyarray(depth_frame.get_data())
+            depth_image = np.rot90(depth_image, k=3)
+            depth_image = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03),
+                                                    cv2.COLORMAP_JET)
+
+            # Align the depth frame to color frame
+            aligned_frames = align.process(frames)
+
+            # Get aligned frames
+            aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
+            aligned_depth_image = np.asanyarray(aligned_depth_frame.get_data())
+            aligned_depth_image = np.rot90(aligned_depth_image, k=3)
+
+            # Render images:
+            #   depth align to color on left
+            #   depth on right
+            aligned_depth_image = cv2.applyColorMap(cv2.convertScaleAbs(aligned_depth_image, alpha=0.03), cv2.COLORMAP_JET)
+
+            cv2.namedWindow('Align', cv2.WINDOW_AUTOSIZE)
+            cv2.namedWindow('Depth', cv2.WINDOW_AUTOSIZE)
+            cv2.namedWindow('Color', cv2.WINDOW_AUTOSIZE)
+            cv2.imshow('Align', aligned_depth_image)
+            cv2.imshow('Depth', depth_image)
+            cv2.imshow('Color', color_image)
+            cv2.waitKey(1)
+
     def test_sync_all(self):
         REALSENSE_FPS = 30
-        VICON_FPS = 120
+        VICON_FPS = 30
 
-        for i in range(5, 6):
+        for i in range(4, 5):
             subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
 
             for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
 
-                if position != 'Left':
-                    continue
-
                 for angle in ['Front', 'Back', 'Side']:
-                    try:
-                        RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
-                                   subject_name + '_' + position + '_' + angle +'.avi'
-                        CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
-                                   + subject_name + '_' + position + '_' + angle +'.csv'
 
-                        # Init the VICON reader and read the points.
+                    print(subject_name + ", " + position + ", " + angle)
+
+                    RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
+                               subject_name + '_' + position + '_' + angle +'_RGB.avi'
+                    CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
+                               + subject_name + '_' + position + '_' + angle +'.csv'
+
+                    # Init the VICON reader and read the points.
+                    try:
                         vicon_reader = VICONReader(vicon_file_path=CSV_PATH)
                         vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
-                        index = 0
-
-                        cap_1 = cv2.VideoCapture(RGB_PATH)
-
-                        # Set-up two windows.
-                        cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
-                        cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
-                        cv2.moveWindow("RGB", 0, 0, )
-                        cv2.moveWindow("VICON", 700, 0, )
-
-                        first_iteration = True
-
-                        while cap_1.isOpened():
-                            ret_1, frame_1 = cap_1.read()
-
-                            # Create an empty image to write the vicon points on in later.
-                            current_frame = list(vicon_points.keys())[index]
-                            blank = np.zeros(shape=(640, 480, 3), dtype=np.uint8)
-                            vicon_image = cv2.cvtColor(blank, cv2.COLOR_RGB2BGR)
-                            current_frame_points = vicon_points[current_frame]
-
-                            for i, point in enumerate(current_frame_points):
-                                x = point.x
-                                y = point.y
-                                z = point.z
-
-                                if math.isnan(x) or math.isnan(y) or math.isnan(z):
-                                    # Skip this point for the moment
-                                    print("empty point")
-                                    continue
-
-                                # Scale the coordinates so they will fit the image.
-                                x = x / 5
-                                y = y / 5
-                                # Draw the point on the blank image (orthographic projection).
-                                vicon_image = cv2.circle(vicon_image, ((int(x) + 170), (int(y) + 120)), radius=0,
-                                                         color=(0, 0, 255),
-                                                         thickness=10)  # Coordinates offsets are manually selected to center the object.
-
-                            index += 1
-
-                            if first_iteration:
-                                scale_percent = 90
-                                width_realsense = int(frame_1.shape[1] * scale_percent / 100)
-                                height_realsense = int(frame_1.shape[0] * scale_percent / 100)
-                                dims_realsense = (width_realsense, height_realsense)
-                                first_iteration = False
-
-                            frame_1 = cv2.resize(frame_1, dims_realsense, interpolation=cv2.INTER_AREA)
-                            vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_180) # OpenCV origin is TOP-LEFT, so image
-                            # needs to be rotated 180 degrees.
-
-                            img_1 = cv2.cvtColor(frame_1, cv2.COLOR_RGB2BGR)
-                            cv2.imshow('RGB', img_1)
-                            cv2.imshow('VICON', vicon_image)
-                            cv2.waitKey(REALSENSE_FPS)
                     except:
                         continue
+                    print("Vicon frames: " + str(len(vicon_points.keys())))
+                    index = 0
+
+                    cap_1 = cv2.VideoCapture(RGB_PATH)
+
+                    # Set-up two windows.
+                    cv2.namedWindow("RGB", cv2.WINDOW_AUTOSIZE)
+                    cv2.namedWindow("VICON", cv2.WINDOW_AUTOSIZE)
+                    cv2.moveWindow("RGB", 0, 0, )
+                    cv2.moveWindow("VICON", 700, 0, )
+
+                    first_iteration = True
+                    counter = 0
+
+                    while cap_1.isOpened():
+                        ret_1, frame_1 = cap_1.read()
+
+                        if index >= len(list(vicon_points.keys())):
+                            break
+
+                        # Create an empty image to write the vicon points on in later.
+                        current_frame = list(vicon_points.keys())[index]
+                        blank = np.zeros(shape=(640, 480, 3), dtype=np.uint8)
+                        vicon_image = cv2.cvtColor(blank, cv2.COLOR_RGB2BGR)
+                        current_frame_points = vicon_points[current_frame]
+
+                        for i, point in enumerate(current_frame_points):
+                            x = point.x
+                            y = point.y
+                            z = point.z
+
+                            if math.isnan(x) or math.isnan(y) or math.isnan(z):
+                                # Skip this point for the moment
+                                continue
+
+                            # Scale the coordinates so they will fit the image.
+                            x = x / 5
+                            y = y / 5
+                            z = z / 5
+                            # Draw the point on the blank image (orthographic projection).
+                            vicon_image = cv2.circle(vicon_image, ((int(x) + 170), (int(z) + 120)), radius=0,
+                                                     color=(0, 0, 255),
+                                                     thickness=10)  # Coordinates offsets are manually selected to center the object.
+                        index += int(VICON_FPS / REALSENSE_FPS)
+
+                        if first_iteration:
+                            scale_percent = 90
+                            width_realsense = int(frame_1.shape[1] * scale_percent / 100)
+                            height_realsense = int(frame_1.shape[0] * scale_percent / 100)
+                            dims_realsense = (width_realsense, height_realsense)
+                            first_iteration = False
+
+                        frame_1 = cv2.resize(frame_1, dims_realsense, interpolation=cv2.INTER_AREA)
+                        vicon_image = cv2.rotate(vicon_image, cv2.cv2.ROTATE_180) # OpenCV origin is TOP-LEFT, so image
+                        # needs to be rotated 180 degrees.
+
+                        img_1 = cv2.cvtColor(frame_1, cv2.COLOR_RGB2BGR)
+                        cv2.imshow('RGB', img_1)
+                        cv2.imshow('VICON', vicon_image)
+                        cv2.waitKey(REALSENSE_FPS)
+                        counter = counter + 1
+
+                    print("RealSense frames: " + str(counter))
 
 
 

@@ -19,45 +19,50 @@ from preprocessing.structs import Point
 
 def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
                 first_frame_number_realsense: int,
-                first_frame_number_vicon: int) -> (List[int], Dict):
+                first_frame_number_vicon: int) -> (List[int], List[int], Dict):
     # -------------------------------------------- Find realsense clean frames -----------------------------------------
     # Get to the folder of all frames.
-    folder_path_realsense = 'frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
+    folder_path_realsense_rgb = 'frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
 
     # Starting from the given first_frame_number, create a new video.
-    all_frames_files_realsense = os.listdir(folder_path_realsense)
-    all_frames_files_realsense.remove('log.json')
-    all_frames_files_realsense = sorted(all_frames_files_realsense, key=lambda x: int(x[:-4]))
+    all_frames_files_realsense_rgb = os.listdir(folder_path_realsense_rgb)
+    all_frames_files_realsense_rgb.remove('log.json')
+    all_frames_files_realsense_rgb = sorted(all_frames_files_realsense_rgb, key=lambda x: int(x[:-4]))
 
     # Find first_frame_number index in the sorted list.
-    first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense)) if
-                                   str(first_frame_number_realsense) in all_frames_files_realsense[i]][0]
+    first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
+                                   str(first_frame_number_realsense) in all_frames_files_realsense_rgb[i]]
+    first_frame_index_realsense = first_frame_index_realsense[0]
 
     # Remove all frames before first_frame_number.
-    trimmed_frames_files_realsense = all_frames_files_realsense[first_frame_index_realsense:]
-    total_frames_number = len(trimmed_frames_files_realsense)
+    trimmed_frames_files_realsense_rgb = all_frames_files_realsense_rgb[first_frame_index_realsense:]
+    total_frames_number = len(trimmed_frames_files_realsense_rgb)
 
-    frames_numbers_realsense = []  # Saving the frame numbers, so i would be able to calculate the difference between each 2 frames
+    frames_numbers_realsense_rgb = []  # Saving the frame numbers, so i would be able to calculate the difference between each 2 frames
     # and "skip" those frames in the vicon data.
 
     # Read all frames.
-    for index, file in enumerate(trimmed_frames_files_realsense):
+    for index, file in enumerate(trimmed_frames_files_realsense_rgb):
         current_frame_number = int(file[:-4])
 
         if index > total_frames_number:
             break
 
-        frames_numbers_realsense.append(current_frame_number)
+        frames_numbers_realsense_rgb.append(current_frame_number)
 
-    differences_list_realsense = [j - i for i, j in zip(frames_numbers_realsense[:-1], frames_numbers_realsense[1:])]
+    differences_list_realsense = [j - i for i, j in zip(frames_numbers_realsense_rgb[:-1], frames_numbers_realsense_rgb[1:])]
 
     # ---------------------------------------------- Find vicon clean frames -------------------------------------------
     # Get to the folder of vicon csv file.
     csv_path = 'D:/Movement Sense Research/Vicon Validation Study/' + sub_name + "/" + \
                sub_name + "_" + "Vicon/"  + sub_name + " " + sub_position + ".csv"
 
-    vicon_reader = VICONReader(vicon_file_path=csv_path)
-    vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+    try:
+        vicon_reader = VICONReader(vicon_file_path=csv_path)
+        vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+    except:
+        print("Error in reading: " + csv_path)
+        return
 
     # Find first_frame_number index in the dict.
     all_frames_vicon = list(vicon_points.keys())
@@ -68,7 +73,6 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
     trimmed_frames_vicon = {k: vicon_points[k] for k in list(vicon_points.keys())[first_frame_index_vicon:]}
 
     # ONLY FOR NOW - TAKE EVERY 4TH FRAME FROM THE VICON DATA
-    # TODO: Make this work better with 120 FPS
     temp_dict = {}
     counter = 1
 
@@ -92,44 +96,19 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
     # Take all vicon points based on the clean realsense frames, and remove the NAN frames.
     vicon_frames_clean = {}
-    there_is_missing_point = False
-    vicon_skipped_frames_numbers = []
 
     for idx, index in enumerate(vicon_indices_list):
         try:
             vicon_frame = list(trimmed_frames_vicon.keys())[index]
-            points = trimmed_frames_vicon[vicon_frame]
         except:
             continue
 
-        for point in points:
-            if math.isnan(point.x) or math.isnan(point.y) or math.isnan(point.z):
-                there_is_missing_point = True
-                break
+        # Add the frame to the clean frames.
+        vicon_frames_clean[vicon_frame] = trimmed_frames_vicon[vicon_frame]
 
-        if there_is_missing_point:
-            # Reset the flag, and add the frame to the skipped frames list.
-            vicon_skipped_frames_numbers.append(idx)
-            there_is_missing_point = False
-        else:
-            # Add the frame to the clean frames.
-            vicon_frames_clean[vicon_frame] = trimmed_frames_vicon[vicon_frame]
+    return frames_numbers_realsense_rgb, vicon_frames_clean
 
-    # Clean the frames in realsense that have missing vicon correlated frames.
-    final_frames_numbers_realsense = []
-
-    for idx, frame in enumerate(frames_numbers_realsense):
-        if idx in vicon_skipped_frames_numbers:
-            continue
-
-        final_frames_numbers_realsense.append(frame)
-
-    if len(final_frames_numbers_realsense) > len(vicon_frames_clean):
-        length = min(len(final_frames_numbers_realsense), len(vicon_frames_clean))
-        final_frames_numbers_realsense = final_frames_numbers_realsense[:length]
-
-    return final_frames_numbers_realsense, vicon_frames_clean
-
+'''
 def sync_120_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
                  first_frame_number_realsense: int,
                  first_frame_number_vicon: int, test_realsense: List[str] = None,
@@ -174,16 +153,26 @@ def sync_120_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
     differences_list_realsense = [j - i for i, j in zip(frames_numbers_realsense[:-1], frames_numbers_realsense[1:])]
 
+    # Create empty dict where key is realsense frame, and value will hold the 4 vicon frames correlated frames.
+    realsense_vicon_frame_map = {}
+
+    for frame in frames_numbers_realsense:
+        realsense_vicon_frame_map[frame] = []
+
     # ---------------------------------------------- Find vicon clean frames -------------------------------------------
     # Get to the folder of vicon csv file.
     if test_csv is None:
-        csv_path = '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/' + sub_name + "/" + \
+        csv_path = 'D:/Movement Sense Research/Vicon Validation Study/' + sub_name + "/" + \
                    sub_name + "_" + "Vicon/"  + sub_name + " " + sub_position + ".csv"
     else:
         csv_path = test_csv
 
-    vicon_reader = VICONReader(vicon_file_path=csv_path)
-    vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+    try:
+        vicon_reader = VICONReader(vicon_file_path=csv_path)
+        vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
+    except:
+        print("Error reading file " + csv_path)
+        return
 
     # Find first_frame_number index in the dict.
     all_frames_vicon = list(vicon_points.keys())
@@ -194,13 +183,7 @@ def sync_120_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
     trimmed_frames_vicon = {k: vicon_points[k] for k in list(vicon_points.keys())[first_frame_index_vicon:]}
 
     # Calculate the indices of the frames we need to take from vicon, based on the clean realsense frames.
-    if fps_diff == 4: # Realsense FPS is 30
-        vicon_indices_list = [0, 1, 2, 3]
-    elif fps_diff == 8: # Realsense FPS is 15
-        vicon_indices_list = [0, 1, 2, 3, 4, 5, 6, 7]
-    else:
-        print('Error in fps diff.')
-        return
+    vicon_indices_list = list(range(fps_diff))
 
     if fps_diff == 4:
         for diff in differences_list_realsense:
@@ -211,6 +194,7 @@ def sync_120_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
             vicon_indices_list.append(vicon_indices_list[-1] + 1)
     elif fps_diff == 8:
         for diff in differences_list_realsense:
+            vicon_indices_list.append(vicon_indices_list[-1] + diff * fps_diff)
             # Each realsense frame has 8 correlated vicon frames.
             vicon_indices_list.append(vicon_indices_list[-8] + diff*8)
             vicon_indices_list.append(vicon_indices_list[-1] + 1)
@@ -220,51 +204,28 @@ def sync_120_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
             vicon_indices_list.append(vicon_indices_list[-1] + 1)
             vicon_indices_list.append(vicon_indices_list[-1] + 1)
             vicon_indices_list.append(vicon_indices_list[-1] + 1)
+    else:
+        print('Error in fps diff.')
+        return
 
-    # Take all vicon points based on the clean realsense frames, and remove the NAN frames.
-    vicon_frames_clean = {}
-    there_is_missing_point = False
-    vicon_skipped_frames_numbers = []
-
+    # Map every 4 frames in vicon to single realsense frame.
     for idx in range(0, len(vicon_indices_list), fps_diff):
-        for i in range(0, fps_diff): # Check if there is NAN point in all 4 frames correlated to the single realsense frame
-            vicon_frame = list(trimmed_frames_vicon.keys())[idx+i]
-            points = trimmed_frames_vicon[vicon_frame]
+        realsense_frame = frames_numbers_realsense[int(idx / 4)]
 
-            for point in points:
-                if math.isnan(point.x) or math.isnan(point.y) or math.isnan(point.z):
-                    there_is_missing_point = True
-                    break
+        # Iterate through 4 frames from that index.
+        for i in range(0, fps_diff):
+            vicon_frame = list(trimmed_frames_vicon.keys())[idx + i]
+            realsense_vicon_frame_map[realsense_frame].append(vicon_frame)
 
-        if there_is_missing_point:
-            # Reset the flag, and add the frame to the skipped frames list.
-            vicon_skipped_frames_numbers.append(int(idx / fps_diff))
-            there_is_missing_point = False
-        else:
-            # Add the frames to the clean frames.
-            for i in range(fps_diff): # Add 4 frames!
-                vicon_frame = list(trimmed_frames_vicon.keys())[idx + i]
-                vicon_frames_clean[vicon_frame] = trimmed_frames_vicon[vicon_frame]
+    final_frames_numbers_realsense = list(realsense_vicon_frame_map.keys())
+    final_frames_numbers_vicon = [item for sublist in realsense_vicon_frame_map.values() for item in sublist]
 
-    # Clean the frames in realsense that have missing vicon correlated frames.
-    final_frames_numbers_realsense = []
-
-    for idx, frame in enumerate(frames_numbers_realsense):
-        if idx in vicon_skipped_frames_numbers:
-            continue
-
-        final_frames_numbers_realsense.append(frame)
-
-    if len(final_frames_numbers_realsense)*fps_diff != len(vicon_frames_clean):
-        print("Frames mismatch!")
-        print("realsense frames: " + str(len(final_frames_numbers_realsense)) + ", vicon frames: " + \
-              str(len(vicon_frames_clean)))
-
-    return final_frames_numbers_realsense, vicon_frames_clean
+    return final_frames_numbers_realsense, final_frames_numbers_vicon
+'''
 
 
-def trim_single_realsense_video(bag_shoot_angle: str, sub_name: str, sub_position: str,
-                                realsense_frames_numbers: List[int]) -> List[int]:
+def trim_single_realsense_video_RGB(bag_shoot_angle: str, sub_name: str, sub_position: str,
+                                realsense_frames_numbers: List[int]) -> int:
     """
     Trim a single realsense video. Ignore missing frames.
 
@@ -273,10 +234,11 @@ def trim_single_realsense_video(bag_shoot_angle: str, sub_name: str, sub_positio
     :param sub_position: 'Stand', 'Squat', 'Tight', 'Left' or 'Right'.
     :param first_frame_number: The number manually picked.
     :param total_frames_number:
-    :return: List of differences between every 2 frames.
+    :param type: 'RGB' or 'DEPTH'.
+    :return: Number of frames in the final video.
     """
 
-    print("Starting trimming video " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
+    print("Starting trimming RGB video " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
 
     f = open('frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/log.json')
     data = json.load(f)
@@ -312,13 +274,76 @@ def trim_single_realsense_video(bag_shoot_angle: str, sub_name: str, sub_positio
     if not os.path.isdir(save_folder):
         os.makedirs(save_folder)
 
-    out = cv2.VideoWriter(save_folder + sub_name + "_" + sub_position + '_' + bag_shoot_angle + '.avi',
+    out = cv2.VideoWriter(save_folder + sub_name + "_" + sub_position + '_' + bag_shoot_angle + '_RGB.avi',
                           cv2.VideoWriter_fourcc(*'DIVX'), REALSENSE_FPS, size)
+
     for i in range(len(img_array)):
         out.write(img_array[i])
     out.release()
     print("Finished.")
 
+    return len(img_array)
+
+def trim_single_realsense_video_depth(bag_shoot_angle: str, sub_name: str, sub_position: str,
+                                realsense_frames_numbers: List[int]) -> int:
+    """
+    Trim a single realsense video. Ignore missing frames.
+
+    :param bag_shoot_angle: 'Back', 'Front' or 'Side'.
+    :param sub_name: e.g 'Sub004'.
+    :param sub_position: 'Stand', 'Squat', 'Tight', 'Left' or 'Right'.
+    :param first_frame_number: The number manually picked.
+    :param total_frames_number:
+    :param type: 'RGB' or 'DEPTH'.
+    :return: Number of frames in the final video.
+    """
+
+
+    print("Starting trimming depth video " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
+
+    f = open('frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/log.json')
+    data = json.load(f)
+    REALSENSE_FPS = data['FPS']
+
+    # Get to the folder of all frames.
+    folder_path = 'frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/'
+
+    # Starting from the given first_frame_number, create a new video.
+    all_frames_files = os.listdir(folder_path)
+    all_frames_files.remove('log.json')
+    all_frames_files = sorted(all_frames_files, key=lambda x: int(x[:-4]))
+
+    # Read all images.
+    img_array = []
+    for file in all_frames_files:
+        current_frame_number = int(file[:-4])
+
+        if current_frame_number not in realsense_frames_numbers:
+            continue
+
+        img = cv2.imread(folder_path + "/" + file)
+        height, width, layers = img.shape
+        size = (width, height)
+        img_array.append(img)
+
+    if not os.path.isdir('trimmed/' + sub_name + "/"):
+        os.makedirs('trimmed/' + sub_name + "/")
+
+    # Create the video
+    save_folder = 'trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/'
+
+    if not os.path.isdir(save_folder):
+        os.makedirs(save_folder)
+
+    out = cv2.VideoWriter(save_folder + sub_name + "_" + sub_position + '_' + bag_shoot_angle + '_Depth.avi',
+                          cv2.VideoWriter_fourcc(*'DIVX'), REALSENSE_FPS, size)
+
+    for i in range(len(img_array)):
+        out.write(img_array[i])
+    out.release()
+    print("Finished.")
+
+    return len(img_array)
 
 def trim_single_vicon_video(bag_shoot_angle: str, sub_name: str, sub_position: str, vicon_points: Dict):
     """
@@ -379,7 +404,17 @@ def trim_single_vicon_video(bag_shoot_angle: str, sub_name: str, sub_position: s
 
     print("Finished.")
 
-def trim_single_csv_file(bag_shoot_angle: str, sub_name: str, sub_position: str, vicon_points: Dict):
+
+def trim_single_csv_file(bag_shoot_angle: str, sub_name: str, sub_position: str, vicon_points: Dict) -> int:
+    """
+
+
+    :param bag_shoot_angle:
+    :param sub_name:
+    :param sub_position:
+    :param vicon_points:
+    :return: Number of frames in the final video.
+    """
     print("Starting trimming csv " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
 
     # Write the points to a new csv file.
@@ -412,12 +447,14 @@ def trim_single_csv_file(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
         rows.append(current)
 
-    with open(trimmed_csv_path, 'a') as file:
+    with open(trimmed_csv_path, 'a', newline='') as file:
         writer = csv.writer(file)
         for row in rows:
             writer.writerow(row)
 
     print("Finished.")
+
+    return len(vicon_points.keys())
 
 def rotate_vicon_points_90_degree_counterclockwise(rotation_axis: str, csv_path: str = None, points: Dict = None):
     if csv_path is not None:
@@ -520,19 +557,38 @@ def trim_all():
                 first_frame_number_realsense = frames_sync[subject_num - 1][position][angle]
                 first_frame_number_vicon = frames_sync[subject_num - 1][position]['Vicon']
 
-                realsense_frames_numbers, vicon_points = sync_30_fps(bag_shoot_angle=angle,
-                                                                      sub_name=subject_name,
-                                                                      sub_position=position,
-                                                                      first_frame_number_realsense=first_frame_number_realsense,
-                                                                      first_frame_number_vicon=first_frame_number_vicon)
+                res = sync_30_fps(bag_shoot_angle=angle,
+                                  sub_name=subject_name,
+                                  sub_position=position,
+                                  first_frame_number_realsense=first_frame_number_realsense,
+                                  first_frame_number_vicon=first_frame_number_vicon)
+                if res is not None:
+                    realsense_frames_numbers_rgb,  vicon_points = res
+                else:
+                    continue
 
-                # TODO: Ask Ron about the rotation
-                #rotated_vicon_points = rotate_vicon_points_90_degree_counterclockwise(rotation_axis='x', points=vicon_points)
-
-                trim_single_realsense_video(bag_shoot_angle=angle, sub_position=position, sub_name=subject_name,
-                                            realsense_frames_numbers=realsense_frames_numbers)
-                trim_single_csv_file(bag_shoot_angle=angle, sub_name=subject_name, sub_position=position,
+                # RGB
+                number_of_frames_realsense = trim_single_realsense_video_RGB(bag_shoot_angle=angle, sub_position=position,
+                                                                         sub_name=subject_name,
+                                                                         realsense_frames_numbers=realsense_frames_numbers_rgb)
+                # Depth
+                #number_of_frames_realsense_depth = trim_single_realsense_video_depth(bag_shoot_angle=angle, sub_position=position,
+                #                                                         sub_name=subject_name,
+                #                                                         realsense_frames_numbers=realsense_frames_numbers_depth)
+                number_of_frames_vicon = trim_single_csv_file(bag_shoot_angle=angle, sub_name=subject_name, sub_position=position,
                                      vicon_points=vicon_points)
+
+                f = open('frames/' + subject_name + '/RealSense/' + position + '/' + angle + '/log.json')
+                data = json.load(f)
+                FPS = data['FPS']
+
+                number_of_frames_realsense_depth = -1
+                data = {"FPS" : FPS, "Number of frames Realsense RGB" : number_of_frames_realsense,
+                        "Number of frames Vicon" : number_of_frames_vicon, "Number of frames depth video" : \
+                            number_of_frames_realsense_depth}
+
+                with open('trimmed/' + subject_name + '/' + position + '/' + angle + '/log.json', 'w') as w:
+                    json.dump(data, w)
 
 
 if __name__ == "__main__":
