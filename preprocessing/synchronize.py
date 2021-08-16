@@ -164,10 +164,10 @@ def aux_generate_realsense_frames():
     :return: None.
     """
 
-    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
+    for root, dirs, files in os.walk("D:/Movement Sense Research/Vicon Validation Study"):
         for file in files:
             if file.endswith(".bag"):
-                if 'Sub001' in file or 'Sub002' in file:
+                if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file or 'Sub004' in file:
                     continue
 
                 if 'Extra' in file or 'Extra' in dirs or 'Extra' in root:
@@ -205,12 +205,6 @@ def aux_generate_realsense_frames():
                 if subject_number > 15:
                     continue
 
-                if subject_name in ['Sub003', 'Sub004', 'Sub005', 'Sub006', 'Sub007', 'Sub008']:
-                    continue
-
-                if subject_name == 'Sub009' and subject_position != 'Back':
-                    continue
-
                 print("Working on " + subject_name + ", " + subject_position + ", " + shooting_angle)
 
                 try:
@@ -220,7 +214,7 @@ def aux_generate_realsense_frames():
                     print("Couldn't read " + file)
 
 def aux_generate_vicon_frames():
-    for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
+    for root, dirs, files in os.walk("D:/Movement Sense Research/Vicon Validation Study"):
         for file in files:
             if file.endswith(".csv"):
                 if 'Sub001' in file or 'Sub002' in file or 'Sub003' in file:
@@ -463,7 +457,5 @@ def generate_synchronized_videos_for_all():
 
 
 if __name__ == "__main__":
-    #generate_synchronized_videos_for_all()
-    generate_realsense_frames(bag_path='../../Data/Sub014_Left_Back.bag', bag_shoot_angle='Back', sub_name='Sub014',
-                              sub_position='Left')
+    aux_generate_realsense_frames()
 

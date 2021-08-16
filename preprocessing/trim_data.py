@@ -53,7 +53,7 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
     # ---------------------------------------------- Find vicon clean frames -------------------------------------------
     # Get to the folder of vicon csv file.
-    csv_path = '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/' + sub_name + "/" + \
+    csv_path = 'D:/Movement Sense Research/Vicon Validation Study/' + sub_name + "/" + \
                sub_name + "_" + "Vicon/"  + sub_name + " " + sub_position + ".csv"
 
     vicon_reader = VICONReader(vicon_file_path=csv_path)
@@ -511,7 +511,7 @@ def trim_all():
     f1 = open('assets/frames_sync.json')
     frames_sync = json.load(f1)
 
-    for i in range(5, 6):
+    for i in range(4, 5):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
         subject_num = i
 
@@ -520,7 +520,7 @@ def trim_all():
                 first_frame_number_realsense = frames_sync[subject_num - 1][position][angle]
                 first_frame_number_vicon = frames_sync[subject_num - 1][position]['Vicon']
 
-                realsense_frames_numbers, vicon_points = sync_120_fps(bag_shoot_angle=angle,
+                realsense_frames_numbers, vicon_points = sync_30_fps(bag_shoot_angle=angle,
                                                                       sub_name=subject_name,
                                                                       sub_position=position,
                                                                       first_frame_number_realsense=first_frame_number_realsense,

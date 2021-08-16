@@ -9,6 +9,7 @@ __pycache__/
 *.avi
 *.json
 !frames_sync.json
+!csv_template.csv
 
 # C extensions
 *.so
