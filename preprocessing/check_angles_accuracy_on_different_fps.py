@@ -55,13 +55,16 @@ def calc_average_angle_per_second_downsampling(vicon_csv_path: str) -> (List, Li
         RSHO = points[RSHO_index]
 
         angle = calc_angle(RFHD, C7, RSHO)
+        angles_120.append(angle)
 
+        '''
         if not math.isnan(angle):
             angles_120.append(angle)
         else:
             nans_counter += 1
+        '''
 
-    # Calculate each angle per frame, 30 FPS
+    # Calculate each angle per frame, 30 FPS, by sampling every 4th frame.
     nans_counter = 0
 
     counter = 0
@@ -74,11 +77,14 @@ def calc_average_angle_per_second_downsampling(vicon_csv_path: str) -> (List, Li
             RSHO = points[RSHO_index]
 
             angle = calc_angle(RFHD, C7, RSHO)
+            angles_30.append(angle)
 
+            '''
             if not math.isnan(angle):
                 angles_30.append(angle)
             else:
                 nans_counter += 1
+            '''
 
         counter = counter + 1
 
@@ -96,7 +102,7 @@ def calc_average_angle_per_second_downsampling(vicon_csv_path: str) -> (List, Li
             sub_list.append(angles_120[i*120+j])
 
         assert len(sub_list) == 120
-        average_angle_per_second_120.append(np.mean(sub_list))
+        average_angle_per_second_120.append(np.nanmean(sub_list))
 
     # Calculate average angle per second, 30 FPS
     average_angle_per_second_30 = []
@@ -108,7 +114,7 @@ def calc_average_angle_per_second_downsampling(vicon_csv_path: str) -> (List, Li
             sub_list.append(angles_30[i*30 + j])
 
         assert len(sub_list) == 30
-        average_angle_per_second_30.append(np.mean(sub_list))
+        average_angle_per_second_30.append(np.nanmean(sub_list))
 
     return average_angle_per_second_30, average_angle_per_second_120
 
@@ -140,40 +146,70 @@ def calc_average_angle_per_second_low_pass_filter(vicon_csv_path: str) -> (List,
         RSHO = points[RSHO_index]
 
         angle = calc_angle(RFHD, C7, RSHO)
+        angles_120.append(angle)
 
+        '''
         if not math.isnan(angle):
             angles_120.append(angle)
         else:
             nans_counter += 1
+        '''
 
-    # Calculate each angle per frame, 30 FPS
-    nans_counter = 0
+    # Calculate each angle per frame, 30 FPS, by averaging the points in every 4 frames.
+    # Map every frame to 4 frames.
+    frames_group = []
 
-    for i in range(0, len(vicon_points.keys())-1, 4):
-        angles = []
+    for i in range(0, len(vicon_points.keys()) - 1, 4):
+        frames_group.append([])
 
-        for j in range(4):
-            if i+j >= len(vicon_points.keys()):
+        for j in range(4):  # Get the average of every 4 frames.
+            if i + j >= len(vicon_points.keys()):
                 break
 
             frame = list(vicon_points.keys())[i+j]
-            points = vicon_points[frame]
-            RFHD = points[RFHD_index]
-            C7 = points[C7_index]
-            RSHO = points[RSHO_index]
-            angle = calc_angle(RFHD, C7, RSHO)
+            frames_group[-1].append(frame)
 
-            if not math.isnan(angle):
-                angles.append(angle)
-            else:
-                nans_counter += 1
-                break
+    # Calculate the average Point for [RFHD, C7, RSHO] for every 4 frames.
+    RFHD_points = []
+    C7_points = []
+    RSHO_points = []
 
-        if not math.isnan(np.mean(angles)):
-            angles_30.append(np.mean(angles))
+    for group in frames_group:
+        for idx, point_index in enumerate([RFHD_index, C7_index, RSHO_index]):
+            x_values = []
+            y_values = []
+            z_values = []
 
-    #print("Average 120: " + str(np.mean(angles_120)))
-    #print("Average 30: " + str(np.mean(angles_30)))
+            for frame in group:
+                points = vicon_points[frame]
+                point = points[point_index]
+
+                x_values.append(point.x)
+                y_values.append(point.y)
+                z_values.append(point.z)
+
+            # Average
+            averaged_point = Point(x=np.nanmean(x_values), y=np.nanmean(y_values), z=np.nanmean(z_values))
+            if idx == 0: # RFHD
+                RFHD_points.append(averaged_point)
+            elif idx == 1: # C7
+                C7_points.append(averaged_point)
+            else: # RSHO
+                RSHO_points.append(averaged_point)
+
+    if len(C7_points) != np.ceil((len(vicon_points.keys()) / 4)):
+        print(len(C7_points))
+        print(np.ceil((len(vicon_points.keys()) / 4)))
+
+    # Calculate average angle per frame
+    for i in range(len(C7_points)):
+        angle = calc_angle(RFHD_points[i], C7_points[i], RSHO_points[i])
+        angles_30.append(angle)
+
+        '''
+        if not math.isnan(angle):
+            angles_30.append(angle)
+        '''
 
     # Calculate average angle per second, 120 FPS
     average_angle_per_second_120 = []
@@ -185,7 +221,7 @@ def calc_average_angle_per_second_low_pass_filter(vicon_csv_path: str) -> (List,
             sub_list.append(angles_120[i*120+j])
 
         assert len(sub_list) == 120
-        average_angle_per_second_120.append(np.mean(sub_list))
+        average_angle_per_second_120.append(np.nanmean(sub_list))
 
     # Calculate average angle per second, 30 FPS
     average_angle_per_second_30 = []
@@ -197,7 +233,7 @@ def calc_average_angle_per_second_low_pass_filter(vicon_csv_path: str) -> (List,
             sub_list.append(angles_30[i*30 + j])
 
         assert len(sub_list) == 30
-        average_angle_per_second_30.append(np.mean(sub_list))
+        average_angle_per_second_30.append(np.nanmean(sub_list))
 
     return average_angle_per_second_30, average_angle_per_second_120
 
@@ -352,9 +388,9 @@ def plot(average_angle_per_second_120: List, average_angle_per_second_30_downsam
 
     # Create diff plot
     x = list(range(1, len(average_angle_per_second_30_downsampled) + 1))
-    y_downsampled = [np.abs(average_angle_per_second_30_downsampled[i]-average_angle_per_second_120[i]) for i in \
+    y_downsampled = [round(np.abs(average_angle_per_second_30_downsampled[i]-average_angle_per_second_120[i]), 4)for i in \
          range(len(average_angle_per_second_30_downsampled))]
-    y_low_pass = [np.abs(average_angle_per_second_30_low_pass[i] - average_angle_per_second_120[i]) for i in \
+    y_low_pass = [round(np.abs(average_angle_per_second_30_low_pass[i] - average_angle_per_second_120[i]), 4) for i in \
                      range(len(average_angle_per_second_30_low_pass))]
     sns.set_style("darkgrid")
     plt.plot(x, y_downsampled, label="downsample")
