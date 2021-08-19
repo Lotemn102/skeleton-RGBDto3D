@@ -451,17 +451,12 @@ class TestPreprocessing(unittest.TestCase):
         config = rs.config()
 
         rs.config.enable_device_from_file(config,
-                                          'D:/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Left_Back.bag')
+                                          '/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/Sub004/Sub004_Back/Sub004_Left_Back.bag')
 
         # Set the format & type.
         config.enable_stream(stream_type=rs.stream.color, width=640, height=480, format=rs.format.rgb8, framerate=30)
         config.enable_stream(stream_type=rs.stream.depth, width=848, height=480, format=rs.format.z16, framerate=30)
         profile = pipeline.start(config)
-
-        # Getting the depth sensor's depth scale (see rs-align example for explanation)
-        depth_sensor = profile.get_device().first_depth_sensor()
-        depth_scale = depth_sensor.get_depth_scale()
-        print("Depth Scale is: ", depth_scale)
 
         # Create an align object
         # rs.align allows us to perform alignment of depth frames to others frames
@@ -480,11 +475,13 @@ class TestPreprocessing(unittest.TestCase):
             color_image = np.rot90(color_image, k=3)
 
             # Read depth frames.
+            '''
             depth_frame = frames.get_depth_frame()
             depth_image = np.asanyarray(depth_frame.get_data())
             depth_image = np.rot90(depth_image, k=3)
             depth_image = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03),
                                                     cv2.COLORMAP_JET)
+            '''
 
             # Align the depth frame to color frame
             aligned_frames = align.process(frames)
@@ -493,6 +490,8 @@ class TestPreprocessing(unittest.TestCase):
             aligned_depth_frame = aligned_frames.get_depth_frame()  # aligned_depth_frame is a 640x480 depth image
             aligned_depth_image = np.asanyarray(aligned_depth_frame.get_data())
             aligned_depth_image = np.rot90(aligned_depth_image, k=3)
+
+            print(color_frame.frame_number, aligned_depth_frame.frame_number)
 
             # Render images:
             #   depth align to color on left
@@ -503,7 +502,7 @@ class TestPreprocessing(unittest.TestCase):
             cv2.namedWindow('Depth', cv2.WINDOW_AUTOSIZE)
             cv2.namedWindow('Color', cv2.WINDOW_AUTOSIZE)
             cv2.imshow('Align', aligned_depth_image)
-            cv2.imshow('Depth', depth_image)
+            #cv2.imshow('Depth', depth_image)
             cv2.imshow('Color', color_image)
             cv2.waitKey(1)
 

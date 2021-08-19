@@ -109,18 +109,18 @@
     "Stand": {
       "Back": 29731,
       "Front": 6352,
-      "Side": 6909,
+      "Side": 6907,
       "Vicon": 1555
     },
     "Tight": {
-      "Back": 37195,
+      "Back": 37196,
       "Front": 13812,
-      "Side": 14371,
+      "Side": 14367,
       "Vicon": 1598
     },
     "Left": {
-      "Back": 33115,
-      "Front": 11539,
+      "Back": 33116,
+      "Front": 11540,
       "Side": 12100,
       "Vicon": 1458
     },
@@ -135,20 +135,20 @@
     "sub_name": "Sub005",
     "Squat": {
       "Back": 114984,
-      "Front": 9214,
+      "Front": 9213,
       "Side": 9062,
       "Vicon": 1376
     },
     "Stand": {
       "Back": 107221,
-      "Front": 1450,
+      "Front": 1447,
       "Side": 1297,
       "Vicon": 1483
     },
     "Tight": {
       "Back": 111964,
       "Front": 6195,
-      "Side": 6042,
+      "Side": 6040,
       "Vicon": 1634
     },
     "Left": {

@@ -32,6 +32,9 @@ class RealSenseReader:
         type = rs.stream.color if self.type == 'RGB' else rs.stream.depth
         width = 640 if self.type == 'RGB' else 848
 
+        if type == rs.stream.depth and self.frame_rate == 15:
+            width = 640
+
         config.enable_stream(stream_type=type, width=width, height=480, format=format, framerate=self.frame_rate)
         pipeline.start(config)
         return pipeline

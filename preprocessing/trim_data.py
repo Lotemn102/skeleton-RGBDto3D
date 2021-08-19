@@ -22,7 +22,7 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
                 first_frame_number_vicon: int) -> (List[int], List[int], Dict):
     # -------------------------------------------- Find realsense clean frames -----------------------------------------
     # Get to the folder of all frames.
-    folder_path_realsense_rgb = 'frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
+    folder_path_realsense_rgb = '/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
 
     # Starting from the given first_frame_number, create a new video.
     all_frames_files_realsense_rgb = os.listdir(folder_path_realsense_rgb)
@@ -30,12 +30,29 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
     all_frames_files_realsense_rgb = sorted(all_frames_files_realsense_rgb, key=lambda x: int(x[:-4]))
 
     # Find first_frame_number index in the sorted list.
-    first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
-                                   str(first_frame_number_realsense) in all_frames_files_realsense_rgb[i]]
-    first_frame_index_realsense = first_frame_index_realsense[0]
+    try:
+        first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
+                                       str(first_frame_number_realsense) in all_frames_files_realsense_rgb[i]]
+
+        # Hurray! A shitty solution: I've manually located the T-pose frames in each video, but than had to re-generate
+        # all frames. RealSense is not deterministic in it's frame numbering, and when re-generating the frames there
+        # might be a shift of 1-2 frames. So the next line fixes the case of 1 frame shift and i found it fixes most
+        # cases.
+        if len(first_frame_index_realsense) == 0:
+            first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
+                                           str(first_frame_number_realsense+1) in all_frames_files_realsense_rgb[i]]
+        if len(first_frame_index_realsense) == 0:
+            first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
+                                           str(first_frame_number_realsense-1) in all_frames_files_realsense_rgb[i]]
+
+        first_frame_index_realsense = first_frame_index_realsense[0]
+
+    except:
+        print("Please re-check first frame in rgb: " + sub_name + ", " + sub_position + ", " + bag_shoot_angle)
 
     # Remove all frames before first_frame_number.
     trimmed_frames_files_realsense_rgb = all_frames_files_realsense_rgb[first_frame_index_realsense:]
+
     total_frames_number = len(trimmed_frames_files_realsense_rgb)
 
     frames_numbers_realsense_rgb = []  # Saving the frame numbers, so i would be able to calculate the difference between each 2 frames
@@ -106,6 +123,9 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
         # Add the frame to the clean frames.
         vicon_frames_clean[vicon_frame] = trimmed_frames_vicon[vicon_frame]
 
+    if len(frames_numbers_realsense_rgb) > len(vicon_frames_clean.keys()):
+        frames_numbers_realsense_rgb = frames_numbers_realsense_rgb[:len(vicon_frames_clean.keys())]
+
     return frames_numbers_realsense_rgb, vicon_frames_clean
 
 
@@ -125,34 +145,23 @@ def trim_single_realsense_file_RGB(bag_shoot_angle: str, sub_name: str, sub_posi
 
     print("Starting trimming RGB video " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
 
-    f = open('frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/log.json')
+    f = open('/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/log.json')
     data = json.load(f)
 
     # Get to the folder of all frames.
-    source_folder_path = 'frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
+    source_folder_path = '/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
 
+    '''
     # Starting from the given first_frame_number, create a new video.
     all_frames_files = os.listdir(source_folder_path)
     all_frames_files.remove('log.json')
     all_frames_files = sorted(all_frames_files, key=lambda x: int(x[:-4]))
+    '''
 
-    # Read all images.
-    img_array = []
-    for file in all_frames_files:
-        current_frame_number = int(file[:-4])
+    if not os.path.isdir('/media/lotemn/Other/project-data/trimmed/' + sub_name + "/"):
+        os.makedirs('/media/lotemn/Other/project-data/trimmed/' + sub_name + "/")
 
-        if current_frame_number not in realsense_frames_numbers:
-            continue
-
-        img = cv2.imread(source_folder_path + "/" + file)
-        height, width, layers = img.shape
-        size = (width, height)
-        img_array.append(img)
-
-    if not os.path.isdir('trimmed/' + sub_name + "/"):
-        os.makedirs('trimmed/' + sub_name + "/")
-
-    save_folder = 'trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/rgb_frames'
+    save_folder = '/media/lotemn/Other/project-data/trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/rgb_frames'
 
     if not os.path.isdir(save_folder):
         os.makedirs(save_folder)
@@ -169,7 +178,6 @@ def trim_single_realsense_file_RGB(bag_shoot_angle: str, sub_name: str, sub_posi
             d = os.path.join(save_folder, item)
             shutil.copy2(s, d)
 
-    return len(img_array)
 
 def trim_single_realsense_file_depth(bag_shoot_angle: str, sub_name: str, sub_position: str,
                                 realsense_frames_numbers: List[int]) -> int:
@@ -185,19 +193,17 @@ def trim_single_realsense_file_depth(bag_shoot_angle: str, sub_name: str, sub_po
     :return: Number of frames in the final video.
     """
 
-
     print("Starting trimming depth video " + sub_name + ", " + sub_position + ", " + bag_shoot_angle + "...")
 
-    f = open('frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/log.json')
-    data = json.load(f)
+    f = open('/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/log.json')
 
     # Get to the folder of all frames.
-    source_folder_path = 'frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/'
+    source_folder_path = '/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSenseDepth/' + sub_position + '/' + bag_shoot_angle + '/'
 
-    if not os.path.isdir('trimmed/' + sub_name + "/"):
-        os.makedirs('trimmed/' + sub_name + "/")
+    if not os.path.isdir('/media/lotemn/Other/project-data/trimmed/' + sub_name + "/"):
+        os.makedirs('/media/lotemn/Other/project-data/trimmed/' + sub_name + "/")
 
-    save_folder = 'trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/depth_frames'
+    save_folder = '/media/lotemn/Other/project-data/trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/depth_frames'
     counter = 0
 
     if not os.path.isdir(save_folder):
@@ -233,12 +239,12 @@ def trim_single_csv_file(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
     # Write the points to a new csv file.
     csv_template_path = 'assets/csv_template.csv'
-    trimmed_csv_folder = 'trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/'
+    trimmed_csv_folder = '/media/lotemn/Other/project-data/trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/'
 
     if not os.path.isdir(trimmed_csv_folder):
         os.makedirs(trimmed_csv_folder)
 
-    trimmed_csv_path = 'trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/' + sub_name \
+    trimmed_csv_path = '/media/lotemn/Other/project-data/trimmed/' + sub_name + '/' + sub_position + '/' + bag_shoot_angle + '/' + sub_name \
                         + '_' + sub_position + '_' + bag_shoot_angle + '.csv'
     shutil.copy2(csv_template_path, trimmed_csv_path)
 
@@ -317,12 +323,14 @@ def trim_all():
     f1 = open('assets/frames_sync.json')
     frames_sync = json.load(f1)
 
-    for i in range(4, 5):
+    for i in range(6, 7):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
         subject_num = i
 
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
+
             for angle in ['Front', 'Back', 'Side']:
+
                 first_frame_number_realsense = frames_sync[subject_num - 1][position][angle]
                 first_frame_number_vicon = frames_sync[subject_num - 1][position]['Vicon']
 
@@ -337,25 +345,35 @@ def trim_all():
                     continue
 
                 # RGB
-                number_of_frames_realsense = trim_single_realsense_file_RGB(bag_shoot_angle=angle, sub_position=position,
+                trim_single_realsense_file_RGB(bag_shoot_angle=angle, sub_position=position,
                                                                          sub_name=subject_name,
                                                                          realsense_frames_numbers=realsense_frames_numbers_rgb)
                 # Depth
-                number_of_frames_realsense_depth = trim_single_realsense_file_depth(bag_shoot_angle=angle, sub_position=position,
+                trim_single_realsense_file_depth(bag_shoot_angle=angle, sub_position=position,
                                                                          sub_name=subject_name,
                                                                          realsense_frames_numbers=realsense_frames_numbers_rgb)
                 number_of_frames_vicon = trim_single_csv_file(bag_shoot_angle=angle, sub_name=subject_name, sub_position=position,
                                      vicon_points=vicon_points)
 
-                f = open('frames/' + subject_name + '/RealSense/' + position + '/' + angle + '/log.json')
+                f = open('/media/lotemn/Other/project-data/frames/' + subject_name + '/RealSense/' + position + '/' + angle + '/log.json')
                 data = json.load(f)
-                FPS = data['FPS']
+                RGB_FPS = data['FPS']
+                RGB_WIDTH = data['width']
 
-                data = {"FPS" : FPS, "Number of frames Realsense RGB" : number_of_frames_realsense,
-                        "Number of frames Vicon" : number_of_frames_vicon, "Number of frames depth video" : \
-                            number_of_frames_realsense_depth}
+                f = open(
+                    '/media/lotemn/Other/project-data/frames/' + subject_name + '/RealSenseDepth/' + position + '/' + angle + '/log.json')
+                data = json.load(f)
+                Depth_FPS = data['FPS']
+                Depth_WIDTH = data['width']
 
-                with open('trimmed/' + subject_name + '/' + position + '/' + angle + '/log.json', 'w') as w:
+                data = {"RGB FPS" : RGB_FPS, "Depth FPS"  : Depth_FPS,
+                        "Number of frames Realsense RGB" : len(realsense_frames_numbers_rgb),
+                        "Number of frames depth video" : \
+                            len(realsense_frames_numbers_rgb),
+                        "Number of frames Vicon" : number_of_frames_vicon,
+                        "RGB width" : RGB_WIDTH, "RGB height" : 480, "Depth width" : Depth_WIDTH, "Depth height" : 480}
+
+                with open('/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/log.json', 'w') as w:
                     json.dump(data, w)
 
 
