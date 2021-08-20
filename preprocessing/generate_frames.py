@@ -208,8 +208,7 @@ def aux_generate_realsense_frames():
         for file in files:
             if file.endswith(".bag"):
 
-                if 'Sub004' in file or 'Sub005' in file or 'Sub006' in file or 'Sub001' in file or 'Sub002' in file \
-                        or 'Sub003' in file:
+                if 'Sub014' not in file and 'Sub015' not in file:
                     continue
 
                 if 'Extra' in file or 'Extra' in dirs or 'Extra' in root:
@@ -252,15 +251,16 @@ def aux_generate_realsense_frames():
                 generate_realsense_frames_rgb_and_depth(bag_path=root + "/" + file, sub_name=subject_name,
                                           bag_shoot_angle=shooting_angle, sub_position=subject_position)
 
-
 def aux_generate_vicon_frames():
     for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/"):
         for file in files:
             if file.endswith(".csv"):
 
-                if 'Sub004' not in file:
+                if 'Sub014' not in file:
                     continue
 
+                if 'Tight' not in file:
+                    continue
 
                 if 'without' in file or 'Cal' in file:
                     continue
@@ -291,11 +291,11 @@ def aux_generate_vicon_frames():
                         subject_position = e
                         break
 
+
                 print("Working on " + subject_name + ", " + subject_position)
                 generate_vicon_frames(csv_path=root + "/" + file)
 
 
 if __name__ == "__main__":
-    # TODO: Re-generate from Sub13
-    aux_generate_realsense_frames()
+    aux_generate_vicon_frames()
 

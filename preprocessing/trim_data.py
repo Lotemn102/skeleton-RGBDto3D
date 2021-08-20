@@ -24,6 +24,11 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
     # Get to the folder of all frames.
     folder_path_realsense_rgb = '/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
 
+    VICON_FPS = 120
+    f = open(folder_path_realsense_rgb + "log.json")
+    data = json.load(f)
+    REALSENSE_FPS = data['FPS']
+
     # Starting from the given first_frame_number, create a new video.
     all_frames_files_realsense_rgb = os.listdir(folder_path_realsense_rgb)
     all_frames_files_realsense_rgb.remove('log.json')
@@ -36,14 +41,19 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
         # Hurray! A shitty solution: I've manually located the T-pose frames in each video, but than had to re-generate
         # all frames. RealSense is not deterministic in it's frame numbering, and when re-generating the frames there
-        # might be a shift of 1-2 frames. So the next line fixes the case of 1 frame shift and i found it fixes most
-        # cases.
+        # might be a shift of 1-2 frames.
         if len(first_frame_index_realsense) == 0:
             first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
                                            str(first_frame_number_realsense+1) in all_frames_files_realsense_rgb[i]]
         if len(first_frame_index_realsense) == 0:
             first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
                                            str(first_frame_number_realsense-1) in all_frames_files_realsense_rgb[i]]
+        if len(first_frame_index_realsense) == 0:
+            first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
+                                           str(first_frame_number_realsense-2) in all_frames_files_realsense_rgb[i]]
+        if len(first_frame_index_realsense) == 0:
+            first_frame_index_realsense = [i for i in range(len(all_frames_files_realsense_rgb)) if
+                                           str(first_frame_number_realsense+2) in all_frames_files_realsense_rgb[i]]
 
         first_frame_index_realsense = first_frame_index_realsense[0]
 
@@ -89,7 +99,7 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
     # Remove all frames before first_frame_number.
     trimmed_frames_vicon = {k: vicon_points[k] for k in list(vicon_points.keys())[first_frame_index_vicon:]}
 
-    # ONLY FOR NOW - TAKE EVERY 4TH FRAME FROM THE VICON DATA
+    # ONLY FOR NOW - TAKE EVERY 4TH FRAME FROM THE VICON DATA (or 8TH frame if REALSENSE_FPS is 15)
     temp_dict = {}
     counter = 1
 
@@ -99,7 +109,7 @@ def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
         counter = counter + 1
 
-        if counter == 5:
+        if counter == int(VICON_FPS/REALSENSE_FPS)+1:
             # Reset
             counter = 1
 
@@ -151,12 +161,6 @@ def trim_single_realsense_file_RGB(bag_shoot_angle: str, sub_name: str, sub_posi
     # Get to the folder of all frames.
     source_folder_path = '/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
 
-    '''
-    # Starting from the given first_frame_number, create a new video.
-    all_frames_files = os.listdir(source_folder_path)
-    all_frames_files.remove('log.json')
-    all_frames_files = sorted(all_frames_files, key=lambda x: int(x[:-4]))
-    '''
 
     if not os.path.isdir('/media/lotemn/Other/project-data/trimmed/' + sub_name + "/"):
         os.makedirs('/media/lotemn/Other/project-data/trimmed/' + sub_name + "/")
@@ -227,7 +231,7 @@ def trim_single_realsense_file_depth(bag_shoot_angle: str, sub_name: str, sub_po
 
 def trim_single_csv_file(bag_shoot_angle: str, sub_name: str, sub_position: str, vicon_points: Dict) -> int:
     """
-
+    Trim a single csv file.
 
     :param bag_shoot_angle:
     :param sub_name:
@@ -323,13 +327,20 @@ def trim_all():
     f1 = open('assets/frames_sync.json')
     frames_sync = json.load(f1)
 
-    for i in range(6, 7):
+    for i in range(14, 15):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
         subject_num = i
 
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
 
+            if position != 'Stand':
+                continue
+
             for angle in ['Front', 'Back', 'Side']:
+
+                if angle != 'Back':
+                    continue
+
 
                 first_frame_number_realsense = frames_sync[subject_num - 1][position][angle]
                 first_frame_number_vicon = frames_sync[subject_num - 1][position]['Vicon']
@@ -343,6 +354,7 @@ def trim_all():
                     realsense_frames_numbers_rgb,  vicon_points = res
                 else:
                     continue
+
 
                 # RGB
                 trim_single_realsense_file_RGB(bag_shoot_angle=angle, sub_position=position,

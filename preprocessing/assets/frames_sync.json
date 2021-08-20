@@ -167,31 +167,31 @@
   {
     "sub_name": "Sub006",
     "Squat": {
-      "Back": 90949,
+      "Back": 28635,
       "Front": 16030,
       "Side": 16171,
       "Vicon": 1280
     },
     "Stand": {
-      "Back": "No T pose",
-      "Front": 6054,
+      "Back": 13727,
+      "Front": 6057,
       "Side": 6199,
-      "Vicon": 2370
+      "Vicon": 3524
     },
     "Tight": {
-      "Back": 88353,
-      "Front": 13955,
-      "Side": 13567,
-      "Vicon": 1393
+      "Back": 26026,
+      "Front": 13423,
+      "Side": 13570,
+      "Vicon": 1352
     },
     "Left": {
-      "Back": 85553,
-      "Front": 10633,
+      "Back": 23826,
+      "Front": 11218,
       "Side": 11361,
       "Vicon": 3779
     },
     "Right": {
-      "Back": 84056,
+      "Back": 21742,
       "Front": 9136,
       "Side": 9278,
       "Vicon": 1541
@@ -201,27 +201,27 @@
     "sub_name": "Sub007",
     "Squat": {
       "Back": 11935,
-      "Front": 626,
+      "Front": 625,
       "Side": 1298,
       "Vicon": 1160
     },
     "Stand": {
       "Back": 109,
-      "Front": 2215,
+      "Front": 2212,
       "Side": 2279,
       "Vicon": 3927
     },
     "Tight": {
       "Back": 6052,
-      "Front": 8159,
+      "Front": 8157,
       "Side": 8219,
       "Vicon": 1200
     },
     "Left": {
       "Back": 3741,
       "Front": 5844,
-      "Side": 5908,
-      "Vicon": 1299
+      "Side": 5904,
+      "Vicon": 1277
     },
     "Right": {
       "Back": 1832,
@@ -234,8 +234,8 @@
     "sub_name": "Sub008",
     "Squat": {
       "Back": 124429,
-      "Front": 113119,
-      "Side": 113789,
+      "Front": 113108,
+      "Side": 113778,
       "Vicon": 1405
     },
     "Stand": {
@@ -248,7 +248,7 @@
       "Back": 120142,
       "Front": 108830,
       "Side": 109503,
-      "Vicon": 1380
+      "Vicon": 1437
     },
     "Left": {
       "Back": 116520,
@@ -258,9 +258,9 @@
     },
     "Right": {
       "Back": 113348,
-      "Front": 102044,
+      "Front": 102017,
       "Side": 102715,
-      "Vicon": 1850
+      "Vicon": 1790
     }
   },
   {
@@ -269,7 +269,7 @@
       "Back": 83706,
       "Front": 6600,
       "Side": 6730,
-      "Vicon": 1240
+      "Vicon": 1290
     },
     "Stand": {
       "Back": 76695,
@@ -398,19 +398,19 @@
   {
     "sub_name": "Sub013",
     "Squat": {
-      "Back": 37896,
+      "Back": 46424,
       "Front": 6387,
       "Side": 6678,
-      "Vicon": 1263
+      "Vicon": 1295
     },
     "Stand": {
-      "Back": 46424,
+      "Back": 37896,
       "Front": 36607,
       "Side": 36678,
       "Vicon": 2920
     },
     "Tight": {
-      "Back": 40802,
+      "Back": 44229,
       "Front": 4188,
       "Side": 4473,
       "Vicon": 1228
@@ -422,7 +422,7 @@
       "Vicon": 1295
     },
     "Right": {
-      "Back": 44229,
+      "Back": 40802,
       "Front": 762,
       "Side": 1047,
       "Vicon": 1385
@@ -437,15 +437,15 @@
       "Vicon": 1435
     },
     "Stand": {
-      "Back": 42095,
+      "Back": 42350,
       "Front": 2016,
       "Side": 4753,
-      "Vicon": 492
+      "Vicon": 1550
     },
     "Tight": {
-      "Back": 47242,
-      "Front": 6902,
-      "Side": 9640,
+      "Back": 47376,
+      "Front": 7043,
+      "Side": 9785,
       "Vicon": 2094
     },
     "Left": {

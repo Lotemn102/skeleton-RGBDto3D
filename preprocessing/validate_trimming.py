@@ -10,12 +10,38 @@ import math
 
 from preprocessing.vicon_data_reader import VICONReader
 
+SUBJECT_NUMBER = 14
+
+def validate_equal_number_of_frames():
+    for i in range(SUBJECT_NUMBER, SUBJECT_NUMBER+1):
+        subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
+        for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
+
+
+
+
+            for angle in ['Front', 'Back', 'Side']:
+                LOG_PATH = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/log.json'
+
+                f = open(LOG_PATH)
+                data = json.load(f)
+                n1 = data['Number of frames Realsense RGB']
+                n2 = data['Number of frames depth video']
+                n3 = data['Number of frames Vicon']
+
+                if n1 != n2 or n2 != n3:
+                    print("Mismatch in " + subject_name + ', ' + position + ', ' + angle)
+                f.close()
+
+    print("Finished checking number of frames.")
+
 
 def visualize_all():
-    for i in range(5, 6):
+    for i in range(SUBJECT_NUMBER, SUBJECT_NUMBER+1):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
 
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
+
             for angle in ['Front', 'Back', 'Side']:
 
                 print(subject_name + ", " + position + ", " + angle)
@@ -34,11 +60,8 @@ def visualize_all():
                     print("FPS mismatch.")
 
                 # Init the VICON reader and read the points.
-                try:
-                    vicon_reader = VICONReader(vicon_file_path=CSV_PATH)
-                    vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
-                except:
-                    continue
+                vicon_reader = VICONReader(vicon_file_path=CSV_PATH)
+                vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
                 index = 0
 
                 # Set-up two windows.
@@ -105,4 +128,5 @@ def visualize_all():
                     index += 1
 
 if __name__ == "__main__":
+    validate_equal_number_of_frames()
     visualize_all()
