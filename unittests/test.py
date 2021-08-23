@@ -1,17 +1,36 @@
 import numpy as np
 import cv2
 import os
+import json
 
 
-path = '/media/lotemn/Other/project-data/frames/Sub004/RealSenseDepth/Left/Front/'
-all_frames_files_realsense_depth = os.listdir(path)
-all_frames_files_realsense_depth.remove('log.json')
-all_frames_files_realsense_depth = sorted(all_frames_files_realsense_depth, key=lambda x: int(x[:-4]))
+path = '/media/lotemn/Other/project-data/trimmed/'
+total = 0
 
-for frame in all_frames_files_realsense_depth:
-    depth_image = np.fromfile(path + frame, dtype='int16', sep="")
-    depth_image = depth_image.reshape([640, 480])
-    depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_image, alpha=0.03),
-                                       cv2.COLORMAP_JET)
-    cv2.imshow("dfdf", depth_colormap)
-    cv2.waitKey(30)
+for i in range(3, 16):
+    subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
+    subject_num = i
+
+    for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
+        if subject_num == 2 and position not in ['Squat', 'Stand']:
+            continue
+
+        if subject_num == 3 and position != 'Squat':
+            continue
+
+        if subject_num == 4 and position == 'Squat':
+            continue
+
+        for angle in ['Front', 'Back', 'Side']:
+            temp_path = path + subject_name + '/' + position + '/' + angle + '/log.json'
+            f = open(temp_path)
+            data = json.load(f)
+            num_frames = int(data['Number of frames Realsense RGB'])
+            print(num_frames)
+            total = total + num_frames
+            f.close()
+
+
+print(total)
+
+

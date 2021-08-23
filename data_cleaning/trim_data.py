@@ -13,8 +13,8 @@ import shutil
 import pandas as pd
 import csv
 
-from preprocessing.vicon_data_reader import VICONReader
-from preprocessing.structs import Point
+from data_cleaning.vicon_data_reader import VICONReader
+from data_cleaning.structs import Point
 
 
 def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
@@ -327,20 +327,16 @@ def trim_all():
     f1 = open('assets/frames_sync.json')
     frames_sync = json.load(f1)
 
-    for i in range(14, 15):
+    for i in range(3, 4):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
         subject_num = i
 
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
 
-            if position != 'Stand':
+            if position != 'Squat':
                 continue
 
             for angle in ['Front', 'Back', 'Side']:
-
-                if angle != 'Back':
-                    continue
-
 
                 first_frame_number_realsense = frames_sync[subject_num - 1][position][angle]
                 first_frame_number_vicon = frames_sync[subject_num - 1][position]['Vicon']
@@ -357,13 +353,13 @@ def trim_all():
 
 
                 # RGB
-                trim_single_realsense_file_RGB(bag_shoot_angle=angle, sub_position=position,
-                                                                         sub_name=subject_name,
-                                                                         realsense_frames_numbers=realsense_frames_numbers_rgb)
+                #trim_single_realsense_file_RGB(bag_shoot_angle=angle, sub_position=position,
+                #                                                         sub_name=subject_name,
+                #                                                         realsense_frames_numbers=realsense_frames_numbers_rgb)
                 # Depth
-                trim_single_realsense_file_depth(bag_shoot_angle=angle, sub_position=position,
-                                                                         sub_name=subject_name,
-                                                                         realsense_frames_numbers=realsense_frames_numbers_rgb)
+                #trim_single_realsense_file_depth(bag_shoot_angle=angle, sub_position=position,
+                #                                                         sub_name=subject_name,
+                #                                                         realsense_frames_numbers=realsense_frames_numbers_rgb)
                 number_of_frames_vicon = trim_single_csv_file(bag_shoot_angle=angle, sub_name=subject_name, sub_position=position,
                                      vicon_points=vicon_points)
 

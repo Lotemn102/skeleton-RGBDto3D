@@ -7,13 +7,13 @@ from mpl_toolkits import mplot3d
 import cv2
 
 
-from preprocessing.vicon_data_reader import VICONReader
-from preprocessing.trim_data import rotate_vicon_points_90_degree_counterclockwise
+from data_cleaning.vicon_data_reader import VICONReader
+from data_cleaning.trim_data import rotate_vicon_points_90_degree_counterclockwise
 
 
 class TestRotation(unittest.TestCase):
     def test_data_without_rotation(self):
-        #reader = VICONReader('../preprocessing/trimmed/Sub005/Stand/Front/Sub005_Stand_Front.csv')
+        #reader = VICONReader('../data_cleaning/trimmed/Sub005/Stand/Front/Sub005_Stand_Front.csv')
         reader = VICONReader( '../../Data/Sub007/Sub007_Vicon/Sub007 Left.csv')
         vicon_points = reader.get_points()
 
@@ -57,7 +57,7 @@ class TestRotation(unittest.TestCase):
             cv2.waitKey(1)
 
     def test_data_with_rotation(self):
-        #path = '../preprocessing/trimmed/Sub005/Stand/Front/Sub005_Stand_Front.csv'
+        #path = '../data_cleaning/trimmed/Sub005/Stand/Front/Sub005_Stand_Front.csv'
         path =  '../../Data/Sub007/Sub007_Vicon/Sub007 Left.csv'
         vicon_points = rotate_vicon_points_90_degree_counterclockwise(csv_path=path, rotation_axis='x')
         #vicon_points = rotate_vicon_points_90_degree_counterclockwise(points=vicon_points, rotation_axis='z')

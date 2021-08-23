@@ -208,7 +208,10 @@ def aux_generate_realsense_frames():
         for file in files:
             if file.endswith(".bag"):
 
-                if 'Sub014' not in file and 'Sub015' not in file:
+                if 'Sub003' not in file:
+                    continue
+
+                if '1' in root:
                     continue
 
                 if 'Extra' in file or 'Extra' in dirs or 'Extra' in root:
@@ -256,13 +259,13 @@ def aux_generate_vicon_frames():
         for file in files:
             if file.endswith(".csv"):
 
-                if 'Sub014' not in file:
+                if 'Sub003' not in file:
                     continue
 
-                if 'Tight' not in file:
+                if '1' in root:
                     continue
 
-                if 'without' in file or 'Cal' in file:
+                if 'without' in file or 'Cal' in file or 'original' in root:
                     continue
 
                 remove_extension = file[:-4]
@@ -291,11 +294,11 @@ def aux_generate_vicon_frames():
                         subject_position = e
                         break
 
-
                 print("Working on " + subject_name + ", " + subject_position)
                 generate_vicon_frames(csv_path=root + "/" + file)
 
 
 if __name__ == "__main__":
-    aux_generate_vicon_frames()
+    #aux_generate_vicon_frames()
+    aux_generate_realsense_frames()
 

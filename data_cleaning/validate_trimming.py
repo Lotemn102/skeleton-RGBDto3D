@@ -8,19 +8,20 @@ import os
 import json
 import math
 
-from preprocessing.vicon_data_reader import VICONReader
+from data_cleaning.vicon_data_reader import VICONReader
 
-SUBJECT_NUMBER = 14
+SUBJECT_NUMBER = 3
 
 def validate_equal_number_of_frames():
     for i in range(SUBJECT_NUMBER, SUBJECT_NUMBER+1):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
 
-
-
+            if position != 'Squat':
+                continue
 
             for angle in ['Front', 'Back', 'Side']:
+
                 LOG_PATH = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/log.json'
 
                 f = open(LOG_PATH)
@@ -42,6 +43,9 @@ def visualize_all():
 
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
 
+            if position != 'Squat':
+                continue
+
             for angle in ['Front', 'Back', 'Side']:
 
                 print(subject_name + ", " + position + ", " + angle)
@@ -49,7 +53,7 @@ def visualize_all():
                 RGB_PATH = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/rgb_frames/'
                 DEPTH_PATH = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/depth_frames/'
                 CSV_PATH = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
-                           + subject_name + '_' + position + '_' + angle + '.csv'
+                          + subject_name + '_' + position + '_' + angle + '.csv'
 
                 log_file_path = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/' + position + '/' + angle + '/log.json'
                 f = open(log_file_path)
@@ -76,12 +80,18 @@ def visualize_all():
 
                 # All rgb frames
                 all_frames_files_realsense_rgb = os.listdir(RGB_PATH)
-                all_frames_files_realsense_rgb.remove('log.json')
+
+                if 'log.json' in all_frames_files_realsense_rgb:
+                    all_frames_files_realsense_rgb.remove('log.json')
+
                 all_frames_files_realsense_rgb = sorted(all_frames_files_realsense_rgb, key=lambda x: int(x[:-4]))
 
                 # All depth frames
                 all_frames_files_realsense_depth = os.listdir(DEPTH_PATH)
-                all_frames_files_realsense_depth.remove('log.json')
+
+                if 'log.json' in all_frames_files_realsense_depth:
+                    all_frames_files_realsense_depth.remove('log.json')
+
                 all_frames_files_realsense_depth = sorted(all_frames_files_realsense_depth, key=lambda x: int(x[:-4]))
 
                 while 1:

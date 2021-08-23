@@ -12,9 +12,9 @@ import seaborn as sns
 import os
 
 
-from preprocessing.structs import Point
-from preprocessing.vicon_data_reader import VICONReader
-from preprocessing.trim_data import rotate_vicon_points_90_degree_counterclockwise
+from data_cleaning.structs import Point
+from data_cleaning.vicon_data_reader import VICONReader
+from data_cleaning.trim_data import rotate_vicon_points_90_degree_counterclockwise
 
 
 def calc_angle(p1: Point, p2: Point, p3: Point) -> float: # p1 is RFHD, pt2 is C7, p3 is RSHO

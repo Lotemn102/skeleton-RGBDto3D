@@ -35,16 +35,16 @@
   {
     "sub_name": "Sub002",
     "Squat": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 9700,
+      "Front": 209930,
+      "Side": 154145,
+      "Vicon": 440
     },
     "Stand": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 7340,
+      "Front": 207471,
+      "Side": 151812,
+      "Vicon": 39
     },
     "Tight": {
       "Back": 0,
@@ -68,10 +68,10 @@
   {
     "sub_name": "Sub003",
     "Squat": {
-      "Back": 0,
-      "Front": 0,
-      "Side": 0,
-      "Vicon": 0
+      "Back": 65087,
+      "Front": 148996,
+      "Side": 149478,
+      "Vicon": 1260
     },
     "Stand": {
       "Back": 0,

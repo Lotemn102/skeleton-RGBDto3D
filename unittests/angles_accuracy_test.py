@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
 
-from preprocessing.check_angles_accuracy_on_different_fps import calc_angle
-from preprocessing.structs import Point
+from data_cleaning.check_angles_accuracy_on_different_fps import calc_angle
+from data_cleaning.structs import Point
 
 class TestAnglesAccuracy(unittest.TestCase):
     def test_calc_angle_1(self):

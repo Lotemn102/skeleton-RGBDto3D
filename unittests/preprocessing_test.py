@@ -5,9 +5,9 @@ import math
 import os
 
 
-from preprocessing.vicon_data_reader import VICONReader
-from preprocessing.realsense_data_reader import RealSenseReader
-from preprocessing.trim_data import sync_30_fps
+from data_cleaning.vicon_data_reader import VICONReader
+from data_cleaning.realsense_data_reader import RealSenseReader
+from data_cleaning.trim_data import sync_30_fps
 
 
 class TestPreprocessing(unittest.TestCase):
@@ -17,8 +17,8 @@ class TestPreprocessing(unittest.TestCase):
 
        :return: None.
        """
-        REALSENSE_PATH = '../../Data/Sub013_Left_Back.bag'
-        VICON_PATH = '../../Data/Sub007 Stand.csv'
+        REALSENSE_PATH = '/media/lotemn/Other/project-data/frames/Sub002/RealSense/Stand'
+        VICON_PATH = 'media/lotemn/Other/project-data/frames/Sub002/RealSense/'
         REALSENSE_FRAME_RATE = 30
         VICON_FRAME_RATE = 120
 
@@ -214,10 +214,10 @@ class TestPreprocessing(unittest.TestCase):
         SUB_NUMBER = '005'
         POSITIONS_LIST = ['Squat', 'Stand', 'Left', 'Right', 'Tight']
         POSITON = POSITIONS_LIST[3]
-        FIRST_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Back.avi'
-        SECOND_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Front.avi'
-        THIRD_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Side.avi'
-        VICON_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Vicon.avi'
+        FIRST_VIDEO_PATH = '../data_cleaning/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Back.avi'
+        SECOND_VIDEO_PATH = '../data_cleaning/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Front.avi'
+        THIRD_VIDEO_PATH = '../data_cleaning/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON + '_Side.avi'
+        VICON_VIDEO_PATH = '../data_cleaning/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(SUB_NUMBER) + '_' + POSITON +  '_Vicon.avi'
 
         cap_1 = cv2.VideoCapture(FIRST_VIDEO_PATH)
         cap_2 = cv2.VideoCapture(SECOND_VIDEO_PATH)
@@ -299,9 +299,9 @@ class TestPreprocessing(unittest.TestCase):
         ANGLE_LIST = ['Back', 'Front', 'Side']
         POSITON = POSITIONS_LIST[3]
         ANGLE = ANGLE_LIST[0]
-        RGB_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
+        RGB_VIDEO_PATH = '../data_cleaning/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
             SUB_NUMBER) + '_' + POSITON + '_' + ANGLE + '.avi'
-        VICON_VIDEO_PATH = '../preprocessing/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
+        VICON_VIDEO_PATH = '../data_cleaning/trimmed/Sub' + str(SUB_NUMBER) + '/Sub' + str(
             SUB_NUMBER) + '_' + POSITON + '_' + ANGLE + '_Vicon_120.avi'
 
         cap_1 = cv2.VideoCapture(RGB_VIDEO_PATH)
@@ -522,11 +522,11 @@ class TestPreprocessing(unittest.TestCase):
 
                     print(subject_name + ", " + position + ", " + angle)
 
-                    RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
+                    RGB_PATH = '../data_cleaning/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
                                subject_name + '_' + position + '_' + angle +'_RGB.avi'
-                    DEPTH_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
+                    DEPTH_PATH = '../data_cleaning/trimmed/' + subject_name + '/' + position + '/' + angle + '/' +  \
                                subject_name + '_' + position + '_' + angle +'_Depth.avi'
-                    CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
+                    CSV_PATH =  '../data_cleaning/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
                                + subject_name + '_' + position + '_' + angle +'.csv'
 
                     # Init the VICON reader and read the points.
@@ -622,9 +622,9 @@ class TestPreprocessing(unittest.TestCase):
 
                     print(subject_name + ", " + position + ", " + angle)
 
-                    RGB_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/rgb_frames/'
-                    DEPTH_PATH = '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/depth_frames/'
-                    CSV_PATH =  '../preprocessing/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
+                    RGB_PATH = '../data_cleaning/trimmed/' + subject_name + '/' + position + '/' + angle + '/rgb_frames/'
+                    DEPTH_PATH = '../data_cleaning/trimmed/' + subject_name + '/' + position + '/' + angle + '/depth_frames/'
+                    CSV_PATH =  '../data_cleaning/trimmed/' + subject_name + '/' + position + '/' + angle + '/' \
                                + subject_name + '_' + position + '_' + angle +'.csv'
 
                     # Init the VICON reader and read the points.
