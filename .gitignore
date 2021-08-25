@@ -11,6 +11,7 @@ __pycache__/
 !frames_sync.json
 !csv_template.csv
 *.raw
+data/
 
 # C extensions
 *.so
