@@ -40,7 +40,6 @@ def hist_equalizer_16_bit(depth_map, max_depth):
     return depth_map
 
 
-
 def generate_frames_without_processing():
     """
     Generate some depth frames as png, without any processing on them
@@ -70,6 +69,7 @@ def generate_frames_without_processing():
     vertical2 = np.vstack((resized_3, resized_4))
     horizontal = np.hstack((vertical1, vertical2))
     cv2.imwrite("without_processing.png", horizontal)
+
 
 def generate_frames_with_depth_mask():
     """
@@ -114,6 +114,7 @@ def generate_frames_with_depth_mask():
     horizontal = np.hstack((vertical1, vertical2))
     cv2.imwrite("with_depth_mask.png", horizontal)
 
+
 def generate_frames_with_depth_mask_and_histogram_equalization():
     IMAGE_PATH = '/media/lotemn/Other/project-data/trimmed/Sub013/Squat/Front/depth_frames/'
 
@@ -133,12 +134,9 @@ def generate_frames_with_depth_mask_and_histogram_equalization():
         depth_map = np.where((original_depth_map > CLIPPING_DIST) | (original_depth_map <= 0), 0, original_depth_map)
 
         # Equalize hist
-        t = int(np.power(2, 16))
-        #depth_map = cv2.normalize(depth_map, dst=None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX)
-        depth_map = hist_equalizer_16_bit(depth_map, int(t))
-
-        #cv2.imshow("Sdsd", depth_map)
-        #cv2.waitKey(1000)
+        t1 = int(np.power(2, 16))
+        t2 = int(CLIPPING_DIST)
+        depth_map = hist_equalizer_16_bit(depth_map, int(t2))
 
         # Colormap
         depth_colormap = cv2.applyColorMap(cv2.convertScaleAbs(depth_map, alpha=0.04),

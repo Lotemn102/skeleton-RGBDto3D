@@ -1,0 +1,18 @@
+1. The depth frames are pretty noisy. You can see the raw depth frames below: [IMG]
+
+	1.1 There is some kind of halo surrounding the objec (dark blue). I think it's might be due to measurement errors in the sensor, since all of these depth 			value are 0.
+	1.2 I'm not sure if we want to keep the background in the scene. I think we want the model to learn the relative depth differences in the object's body 			parts, and not the relative depth differences between the object and the wall behind him for example..
+	
+I've removed the "halo" pixels and the background using threshold on the depth map:
+[IMG]
+
+I've then tried to use histogram equalization on the depth map, hoping to get more constrast in the object's body parts, but personally i think it just might add more noise to the data: 
+[IMG]
+
+What do you think?
+
+2. Known characteristics of the data worth mentioning, though i don't think they are an actual issue for us:
+	2.1 In most sessions, the object is cropped in some frames. For example, the head is cropped or the feet are cropped. If i remember correctly Omer told me 		this is due to the realsense sensors' distance limitations. 
+	2.2 The rotation of the recording is different between different sessions. For example, the rotation of the camera used for Sub001/Front is slightly 	different from the rotation of the camera used for Sub002/Front.
+	
+	
