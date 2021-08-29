@@ -1,3 +1,8 @@
+0. Convex hull: Do you mean viewing the convex hull of the **entire** points in the data? I'm guessing no. I've formed the convex hull of several frames from the same position over multiple subjects. For example, all points from the first frames of the "Stand" position over all subjects :
+ [IMG]
+
+This is what you meant?
+
 1. The depth frames are pretty noisy. You can see the raw depth frames below: [IMG]
 
 	1.1 There is some kind of halo surrounding the objec (dark blue). I think it's might be due to measurement errors in the sensor, since all of these depth 			value are 0.

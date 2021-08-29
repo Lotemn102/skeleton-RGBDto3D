@@ -1,10 +1,15 @@
 """
 Find the convex hull of the object in rgb images, and the in 3D vicon points.
 """
+import math
 
 import cv2
 import numpy as np
 import random as rng
+from scipy.spatial import ConvexHull
+import matplotlib.pyplot as plt
+
+from data_cleaning.vicon_data_reader import VICONReader
 
 
 def find_convex_hull_single_rgb():
@@ -121,7 +126,7 @@ def find_convex_hull_single_rgb_2():
         depth_mask = depth_mask.astype('uint8')
 
         # Blur out the background
-        blurred_object = cv2.GaussianBlur(rgb_image, (71, 71), 0)
+        blurred_object = cv2.GaussianBlur(rgb_image, (51, 51), 0)
         gray_pixel = 128
 
         # Combine the original with the blurred frame based on mask
@@ -144,18 +149,128 @@ def find_convex_hull_single_rgb_2():
         drawing = np.zeros((thresh.shape[0], thresh.shape[1], 3), dtype=np.uint8)
         for i in range(len(contours)):
             color = (rng.randint(0, 256), rng.randint(0, 256), rng.randint(0, 256))
-            #cv2.drawContours(drawing, contours, i, color)
-            cv2.drawContours(drawing, hull_list, i, color)
+            cv2.drawContours(drawing, contours, i, color)
+            #cv2.drawContours(drawing, hull_list, i, color)
         # Show in a window
-        cv2.imshow('Contours', drawing)
+        cv2.imshow('Contours', thresh)
         cv2.waitKey(0)
 
+def find_convex_hull_vicon_single_sessions():
+    CSV_PATH = '/media/lotemn/Other/project-data/trimmed/Sub013/Stand/Front/Sub013_Stand_Front.csv'
 
+    reader = VICONReader(CSV_PATH)
+    points_map = reader.get_points()
+    all_points = []
 
+    for index in points_map.keys():
+        list_points = []
+        points = points_map[index]
 
+        # Convert from struct Point to list[3].
+        for p in points:
+            temp = [p.x, p.z]
+
+            if not math.isnan(temp[0]):
+                list_points.append(temp)
+
+        list_points = np.array(list_points)
+        all_points.extend(list_points)
+
+    all_points = np.array(all_points)
+    # Calculate the convex hull.
+    hull = ConvexHull(all_points)
+
+    # Draw the result.
+    hull_indices = hull.vertices
+
+    # These are the actual points.
+    hull_pts = all_points[hull_indices, :]
+
+    '''
+    # PLOT IN 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Plot defining corner points
+    ax.plot(hull_pts.T[0], hull_pts.T[1], hull_pts.T[2], "ko")
+
+    # 12 = 2 * 6 faces are the simplices (2 simplices per square face)
+    for s in hull.simplices:
+        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+        ax.plot(list_points[s, 0], list_points[s, 1], list_points[s, 2], "r-")
+
+    # Make axis label
+    for i in ["x", "y", "z"]:
+        eval("ax.set_{:s}label('{:s}')".format(i, i))
+
+    ax.view_init(0, 90)
+    plt.show()
+    '''
+
+    plt.plot(all_points[:, 0], all_points[:, 1], 'ko', markersize=10)
+    plt.fill(hull_pts[:, 0], hull_pts[:, 1], fill=False, edgecolor='b')
+    plt.savefig("stand_convex_hull.png")
+
+def find_convex_hull_vicon_multiple_sessions():
+    paths = []
+
+    for i in range(4, 15):
+        subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
+        CSV_PATH = '/media/lotemn/Other/project-data/trimmed/' + subject_name + '/Stand/Front/' + subject_name + '_Stand_Front.csv'
+        paths.append(CSV_PATH)
+
+    all_points = []
+
+    for path in paths:
+        reader = VICONReader(path)
+        points_map = reader.get_points()
+        first_frame = list(points_map.keys())[0]
+        points = points_map[first_frame]
+
+        # Convert from struct Point to list[3].
+        for p in points:
+            temp = [p.x, p.z]
+
+            if not math.isnan(temp[0]):
+                all_points.append(temp)
+
+    all_points = np.array(all_points)
+    # Calculate the convex hull.
+    hull = ConvexHull(all_points)
+
+    # Draw the result.
+    hull_indices = hull.vertices
+
+    # These are the actual points.
+    hull_pts = all_points[hull_indices, :]
+
+    '''
+    # PLOT IN 3D
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Plot defining corner points
+    ax.plot(hull_pts.T[0], hull_pts.T[1], hull_pts.T[2], "ko")
+
+    # 12 = 2 * 6 faces are the simplices (2 simplices per square face)
+    for s in hull.simplices:
+        s = np.append(s, s[0])  # Here we cycle back to the first coordinate
+        ax.plot(list_points[s, 0], list_points[s, 1], list_points[s, 2], "r-")
+
+    # Make axis label
+    for i in ["x", "y", "z"]:
+        eval("ax.set_{:s}label('{:s}')".format(i, i))
+
+    ax.view_init(0, 90)
+    plt.show()
+    '''
+
+    plt.plot(all_points[:, 0], all_points[:, 1], 'ko', markersize=10)
+    plt.fill(hull_pts[:, 0], hull_pts[:, 1], fill=False, edgecolor='b')
+    plt.savefig("stand_convex_hull_all.png")
 
 if __name__ == "__main__":
-    find_convex_hull_single_rgb_2()
+    find_convex_hull_vicon_multiple_sessions()
 
 
 
