@@ -3,13 +3,13 @@
 ## OpenPose (Supervised, single-framed)
 ### Network Architecture
 
-Input (RGB) -> VGG19 -> 
+Input (RGB, shape: (H, W, 3)) -> VGG19 -> 
 
 <p align="center">
   <img width="600" height="" src="https://miro.medium.com/max/1094/1*FEMui63FL-znpL64lgf7Mw.png">
 </p>
 
--> Greedy inference -> Output (19 2d points, 19 vectors)
+-> Greedy inference -> Output ((heatmap for 19 points, shape: (H, W, 19)), (19 vectors, shape: (H, W, 19*2)))
 
 Where:
 - VGG19 - For features extraction.
