@@ -52,6 +52,5 @@ Overall objective:
 
 ### Questions
 - Do we want [A] to change the network s.t the output will be in 3d representation or [B] re-train the 2d network on our data, and reconstruct the 3d points from it's output? (that's what they did in [openpose-3d](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/01_demo.md#3-d-reconstruction), they used Levenberg–Marquardt algorithm for reconstruction, assuming 2 images as input from from stereo camera, also done in [here](https://github.com/Daniil-Osokin/lightweight-human-pose-estimation-3d-demo.pytorch) using method described in [this paper](https://arxiv.org/pdf/1712.03453.pdf)).
-- If [A], how? Some ideas:
-  - Use a 3d matrix of (max_vicon_x, max_vicon_y, max_vicon_z). Scale all points before training s.t. each point is in a seperate pixel, re-scale the points back in inference. What layers can be used for the 2d->3d transformation?
+- If [A], how? Add more convolutional layers, so the output will be (1, 3, 39)?
 - If [B], can we extract the 2 seperate images for each frame from realsense?
