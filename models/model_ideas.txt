@@ -1,8 +1,0 @@
-Multi-frames:
-	- RNN (LSTM/GRU): How can we combine convolutional layers in it? Maybe before we put every sample x_i to the RNN we'll pass it through convolutional layer? https://arxiv.org/pdf/1808.03867.pdf
-	- ResNet (Can it be used on multiple input?)
-	- Transformers (?) https://arxiv.org/pdf/2011.14503.pdf
-Single-frame:
-	- 2 sub-CNNs like OpenPose
-	- Many sub-CNNs like the paper Ron sent
-	- ResNet
