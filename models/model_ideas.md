@@ -52,5 +52,5 @@ Overall objective:
 
 ### Questions
 - Do we want [A] to change the network s.t the output will be in 3d representation or [B] re-train the 2d network on our data, and reconstruct the 3d points from it's output? (that's what they did in [openpose-3d](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/01_demo.md#3-d-reconstruction), they used Levenberg–Marquardt algorithm for reconstruction, assuming 2 images as input from from stereo camera, also done in [here](https://github.com/Daniil-Osokin/lightweight-human-pose-estimation-3d-demo.pytorch) using method described in [this paper](https://arxiv.org/pdf/1712.03453.pdf)).
-- If [A], how? Add more convolutional layers, so the output will be (1, 3, 39)?
+- If [A], how? Add more convolutional layers, so the output will be (1, 3, 39)? How to handle the depth data in the input layer?
 - If [B], can we extract the 2 seperate images for each frame from realsense?
