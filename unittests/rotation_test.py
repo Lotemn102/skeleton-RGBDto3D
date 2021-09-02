@@ -14,7 +14,7 @@ from data_cleaning.trim_data import rotate_vicon_points_90_degree_counterclockwi
 class TestRotation(unittest.TestCase):
     def test_data_without_rotation(self):
         #reader = VICONReader('../data_cleaning/trimmed/Sub005/Stand/Front/Sub005_Stand_Front.csv')
-        reader = VICONReader( '../../Data/Sub007/Sub007_Vicon/Sub007 Left.csv')
+        reader = VICONReader('../../data/Sub007/Sub007/Left/Front/Sub007_Left_Front.csv')
         vicon_points = reader.get_points()
 
         first_frame_points = list(vicon_points.values())[0]
@@ -58,7 +58,7 @@ class TestRotation(unittest.TestCase):
 
     def test_data_with_rotation(self):
         #path = '../data_cleaning/trimmed/Sub005/Stand/Front/Sub005_Stand_Front.csv'
-        path =  '../../Data/Sub007/Sub007_Vicon/Sub007 Left.csv'
+        path =  '../../data/Sub007/Sub007/Left/Front/Sub007_Left_Front.csv'
         vicon_points = rotate_vicon_points_90_degree_counterclockwise(csv_path=path, rotation_axis='x')
         #vicon_points = rotate_vicon_points_90_degree_counterclockwise(points=vicon_points, rotation_axis='z')
         #vicon_points = rotate_vicon_points_90_degree_counterclockwise(points=vicon_points, rotation_axis='z')

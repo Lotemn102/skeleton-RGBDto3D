@@ -1,3 +1,7 @@
+"""
+Plot some graphs about missing data in RealSense and vicon, for data quality evaluation.
+"""
+
 import numpy as np
 from PIL import Image
 import math
