@@ -280,7 +280,7 @@ def trim_single_csv_file(bag_shoot_angle: str, sub_name: str, sub_position: str,
 
     return len(vicon_points.keys())
 
-def rotate_vicon_points_90_degree_counterclockwise(rotation_axis: str, csv_path: str = None, points: Dict = None):
+def rotate_vicon_points_90_degrees_counterclockwise(rotation_axis: str, csv_path: str = None, points: Dict = None):
     if csv_path is not None:
         vicon_reader = VICONReader(vicon_file_path=csv_path)
         vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>

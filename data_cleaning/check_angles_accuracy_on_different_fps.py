@@ -14,7 +14,7 @@ import os
 
 from data_cleaning.structs import Point
 from data_cleaning.vicon_data_reader import VICONReader
-from data_cleaning.trim_data import rotate_vicon_points_90_degree_counterclockwise
+from data_cleaning.trim_data import rotate_vicon_points_90_degrees_counterclockwise
 
 
 def calc_angle(p1: Point, p2: Point, p3: Point) -> float: # p1 is RFHD, pt2 is C7, p3 is RSHO
@@ -251,7 +251,7 @@ def visualize_angle(vicon_csv_path: str, average_angle_per_second_120: List, ave
     vicon_points = reader.get_points()
 
     # Rotate points for better visualizing.
-    rotated_points = rotate_vicon_points_90_degree_counterclockwise(points=vicon_points, rotation_axis='x')
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(points=vicon_points, rotation_axis='x')
 
     # Init OpenCV window for the angles.
     #cv2.namedWindow("Angles", cv2.WINDOW_AUTOSIZE)
