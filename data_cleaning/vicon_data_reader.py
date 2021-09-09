@@ -30,7 +30,7 @@ class VICONReader:
         self.points_per_frame_map = {}
 
         for index, row in self.csv_data.iterrows():
-            if index < 2: # First 2 rows are empty
+            if index < 1: # First row is empty
                 continue
 
             frame = row[0] # First column holds the frame's id.
