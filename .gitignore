@@ -12,6 +12,7 @@ __pycache__/
 !csv_template.csv
 *.raw
 data/
+cvat_user.txt
 
 # C extensions
 *.so

@@ -1,5 +1,7 @@
 """
 Taken from: https://gist.github.com/oshea00/dfb7d657feca009bf4d095d4cb8ea4be
+Another nice source: https://zalo.github.io/blog/kabsch/
+I've used CVAT for annotating the points in the images. Link to the project: https://cvat.org/projects/14462
 """
 
 import numpy as np
@@ -17,10 +19,10 @@ scaling = False
 # s = scale B to A
 # R = 3x3 rotation matrix (B to A)
 # t = 3x1 translation vector (B to A)
-def rigid_transform_3D(A, B, scale):
+def kabsch(A, B, scale):
     assert len(A) == len(B)
 
-    N = A.shape[0];  # total points
+    N = A.shape[0]  # total points
 
     centroid_A = np.mean(A, axis=0)
     centroid_B = np.mean(B, axis=0)
@@ -31,29 +33,30 @@ def rigid_transform_3D(A, B, scale):
 
     # dot is matrix multiplication for array
     if scale:
-        H = np.transpose(BB).dot(AA) / N
+        H = np.transpose(BB) * AA / N
     else:
-        H = np.transpose(BB).dot(AA)
+        H = np.transpose(BB) * AA
 
     U, S, Vt = np.linalg.svd(H)
 
-    R = Vt.T.dot(U.T)
+    R = Vt.T * U.T
 
     # special reflection case
     if np.linalg.det(R) < 0:
-        print ("Reflection detected")
+        print("Reflection detected")
         Vt[2, :] *= -1
-        R = Vt.T.dot(U.T)
+        R = Vt.T * U.T
 
     if scale:
         varA = np.var(A, axis=0).sum()
-        c = 1 / (1 / varA.dot(np.sum(S)))  # scale factor
-        t = -R.dot((centroid_B.T.dot(c))) + centroid_A.T
+        c = 1 / (1 / varA * np.sum(S))  # scale factor
+        t = -R * (centroid_B.T * c) + centroid_A.T
     else:
         c = 1
-        t = -R.dot(centroid_B.T) + centroid_A.T
+        t = -R * centroid_B.T + centroid_A.T
 
     return c, R, t
+
 
 def test():
     # Test
@@ -80,18 +83,15 @@ def test():
                        [0.0000, 0.0000,0.0000,1.0000]])
 
     # recover the transformation
-    s, ret_R, ret_t = rigid_transform_3D(A, B, scaling)
-    #s, ret_R, ret_t = umeyama(A, B)
+    ret_R, ret_t = kabsch(A, B)
 
     # Find the error
-    a = (ret_R * B.T)
-    b = np.tile(ret_t, (1, n))
-    B2 = a + b
+    B2 = (ret_R * A.T) + np.tile(ret_t, (1, n))
     B2 = B2.T
-    err = A - B2
+    err = B - B2
     err = np.multiply(err, err)
     err = np.sum(err)
-    rmse = sqrt(err / n);
+    rmse = sqrt(err / n)
 
     #convert to 4x4 transform
     match_target = np.zeros((4,4))
@@ -117,10 +117,6 @@ def test():
     print (ret_t)
     print ("")
 
-    print ("Scale")
-    print (s)
-    print ("")
-
     print ("Homogeneous Transform")
     print (match_target)
     print ("")
@@ -136,6 +132,3 @@ def test():
 
     print ("RMSE:", rmse)
     print ("If RMSE is near zero, the function is correct!")
-
-if __name__ == "__main__":
-    test()
