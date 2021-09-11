@@ -1,7 +1,3 @@
-"""
-This test shows that the Kabsch algorithm is not working well for our problem...
-"""
-
 import unittest
 import cv2
 import numpy as np
@@ -82,8 +78,8 @@ def read_data(show_data=False):
 
 
 class TestKabsch(unittest.TestCase):
-    def test_1(self):
-        two_d_data, three_d_data = read_data(show_data=False)
+    def test(self):
+        two_d_data, three_d_data = read_data(show_data=True)
 
         # Find transformation.
         s, ret_R, ret_t = kabsch(A=two_d_data, B=three_d_data, scale=True)
@@ -106,53 +102,6 @@ class TestKabsch(unittest.TestCase):
             p = p.T
             x = int(int(p[0]))
             y = int(int(p[1]))
-            image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
-
-        cv2.imshow("Projected", image)
-        cv2.waitKey(0)
-
-    def test_2(self):
-        """
-        Trying to use scipy's kabsch implementation. Not sure why but the rotation matrix it returns is wrong...
-        """
-        A, B = read_data()
-
-        rotation, rmsd = spatial.transform.Rotation.align_vectors(a=B, b=A)
-        r = rotation.as_matrix()
-
-        # Convert to 4x4 transform matrix
-        K = np.zeros((4, 4))
-        K[:3, :3] = r
-        # Assuming translation is 0
-        K[3, 3] = 1
-
-        # Find the error.
-        N = A.shape[0]
-        src_matrix = np.ones((N, 4))  # Add last column of ones.
-        src_matrix[:, 0:3] = B
-        target_matrix = np.zeros((N, 3))
-
-        for i, row in enumerate(src_matrix):
-            uvw = np.dot(K, row)
-            u = uvw[0] / uvw[2]  # Scale by Z value
-            v = uvw[1] / uvw[2]  # Scale by Z value
-            target_matrix[i][0] = np.round(u)
-            target_matrix[i][1] = np.round(v)
-
-        target_matrix = target_matrix[:, 0:3]  # Remove last column of ones.
-        err = A - target_matrix
-        err = np.multiply(err, err)
-        err = np.sum(err)
-        rmse = math.sqrt(err / N)
-        print("rmse: " + str(rmse))
-
-        # Visualize projected points.
-        image = cv2.imread(IMAGE_PATH)
-
-        for p in target_matrix:
-            p = p.T
-            x = int(int(p[0]) / 5) + 200
-            y = int(int(p[1]) / 5) + 200
             image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
 
         cv2.imshow("Projected", image)

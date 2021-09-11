@@ -50,7 +50,33 @@ def rename_vicon_frames(images_folder_path: str, csv_path: str):
     header.extend([' ' for _ in range(118)])
     file.to_csv(new_csv_path, index=False, header=header)
 
+def aux():
+    """
+    Rename frames for all files.
+
+    :return: None
+    """
+    angles = ['Front', 'Side', 'Back']
+    positions = ['Stand', 'Squat', 'Tight', 'Left', 'Right']
+
+    for i in range(2, 16):
+        sub_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
+
+        for position in positions:
+            for angle in angles:
+                try:
+                    rename_vicon_frames(images_folder_path="../../data/{sub_name}/{sub_name}/{position}/{angle}"
+                                                           "/rgb_frames".format(sub_name=sub_name, position=position,
+                                                                                angle=angle),
+                                        csv_path="../../data/{sub_name}/{sub_name}/{position}/{angle}/{sub_name}_"
+                                                 "{position}_{angle}.csv".format(sub_name=sub_name, position=position,
+                                                                                angle=angle))
+                except FileExistsError:
+                    print("Already exist {name}, {pos}, {angle}. Skipping.".format(name=sub_name, pos=position, angle=angle))
+                except FileNotFoundError:
+                    print("Not found {name}, {pos}, {angle}. Skipping.".format(name=sub_name, pos=position, angle=angle))
+
+
 
 if __name__ == "__main__":
-    rename_vicon_frames(images_folder_path="../../data/Sub007/Sub007/Left/Back/rgb_frames",
-                        csv_path="../../data/Sub007/Sub007/Left/Back/Sub007_Left_Back.csv")
+    pass
