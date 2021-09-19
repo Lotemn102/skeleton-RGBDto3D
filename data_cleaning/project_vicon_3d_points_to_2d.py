@@ -7,17 +7,19 @@ import numpy as np
 import json
 import cv2
 from shutil import copyfile
+import open3d as o3d
 
 from data_cleaning.kabsch import kabsch
 from data_cleaning.cvat_data_reader import CVATReader
 from data_cleaning.vicon_data_reader import VICONReader, KEYPOINTS_NAMES
 from data_cleaning.visualize_functions import visualize_2d_points_on_frame
+from data_cleaning.visualize_functions import visualize_vicon_points
 
 ANGLE = 'Front'
 SUB = 'Sub007'
 PATH_DATA = '../../data/{sub}/{sub}/'.format(sub=SUB)
 PATH_ANNOTATIONS = '../../annotations_data/{sub}/{angle}/'.format(angle=ANGLE, sub=SUB)
-PIXEL_POINTS_JSON_PATH = '../../annotations_data/{sub}/{angle}/annotations_all.json'.format(angle=ANGLE, sub=SUB)
+PIXEL_POINTS_JSON_PATH = '../../annotations_data/{sub}/{angle}/annotations.json'.format(angle=ANGLE, sub=SUB)
 PIXEL_POINTS_SUB_SET_JSON_PATH = '../../annotations_data/{sub}/{angle}/annotations_subset.json'.format(angle=ANGLE, sub=SUB)
 VICON_POINTS_CSV_PATH = '../../annotations_data/{sub}/{angle}/vicon_points.csv'.format(angle=ANGLE, sub=SUB)
 RGB_IMAGE_PATH = '../../annotations_data/{sub}/{angle}/rgb_frame.png'.format(angle=ANGLE, sub=SUB)
@@ -94,9 +96,9 @@ def calc_rmse(annotated_2d_points, vicon_3d_points, scale, rotation_matrix, tran
     rmse = math.sqrt(err / N)
     return rmse, diff
 
-def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
+def transform(vicon_3d_points, scale, rotation_matrix, translation_vector):
     """
-    Project vicon 3d points to pixel 2d points.
+    Project vicon 3d points to realsense 3d points.
 
     :param vicon_3d_points: 3D vicon points.
     :param scale: Float.
@@ -120,11 +122,56 @@ def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
     target_matrix = target_matrix[:, 0:3]  # Remove last column of ones.
     return target_matrix
 
-def read_data(annotations_path):
+def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
+    # Vicon 3d -> realsense 3d
+    # Convert the points into matrix
+    B = np.zeros((len(vicon_3d_points), 3))
+
+    for i, keypoint in enumerate(vicon_3d_points):
+        B[i][0] = keypoint.x
+        B[i][1] = keypoint.y
+        B[i][2] = keypoint.z
+
+    B = np.asmatrix(B)
+
+    N = len(vicon_3d_points)
+    target_matrix = np.dot(rotation_matrix, np.dot(B.T, scale)) + np.tile(translation_vector, (1, N))
+    target_matrix = target_matrix.T
+    target_matrix = target_matrix[:, 0:3]  # Remove last column of ones.
+
+    # Realsense 3d -> pixels
+    projected = np.zeros((target_matrix.shape[0], 2))
+
+    for i, row in enumerate(target_matrix):
+        point = np.array(row)
+        point = point.T
+
+        u = point[0] / 1  # Scale by Z value
+        v = point[1] / 1  # Scale by Z value
+
+        '''
+        x = row.T[0]
+        y = row.T[1]
+        z = row.T[2]
+
+        u = x / z
+        v = y / z
+        '''
+
+        projected[i] = [int(u), int(v)]
+
+    return projected
+
+def read_data(annotations_path, depth_path):
     # Load 2d points.
     cvat_reader = CVATReader(annotations_path)
     data_2d_dict = cvat_reader.get_points()
     all_points_names_2d = data_2d_dict.keys()
+
+    # Read depth map.
+    depth_image = np.fromfile(depth_path, dtype='int16', sep="")
+    depth_image = np.uint8(depth_image)
+    depth_image = depth_image.reshape([640, 480])
 
     # Init matrix with the data. Order of points is according to KEYPOINTS_NAMES.
     A = np.zeros((len(data_2d_dict), 3))
@@ -135,9 +182,26 @@ def read_data(annotations_path):
         y = np.round(keypoint[1])
         A[i][0] = x
         A[i][1] = y
-        A[i][2] = 0
+        A[i][2] = depth_image[int(y)][int(x)]
 
     A = np.asmatrix(A)
+
+    pcd = o3d.geometry.PointCloud()
+    points = []
+
+    for p in A:
+        x = float(p.T[0])
+        y = float(p.T[1])
+        z = float(p.T[2])
+        points.append([x, y, z])
+
+    points = np.array(points)
+    pcd.points = o3d.utility.Vector3dVector(points)
+    visualizer = o3d.visualization.Visualizer()
+    visualizer.create_window()
+    visualizer.add_geometry(pcd)
+    visualizer.run()
+    visualizer.close()
 
     # Load 3d points.
     reader_3d = VICONReader(VICON_POINTS_CSV_PATH)
@@ -273,11 +337,11 @@ def read_mean_data(annotations_path):
 
     return A, B
 
-def save_calibration_to_json(path, test_name, is_iterative=False, average_points=False):
+def save_calibration_to_json(path, depth_path, test_name, is_iterative=False, average_points=False):
     if average_points:
         A, B = read_mean_data(path)
     else:
-        A, B = read_data(path)
+        A, B = read_data(path, depth_path)
 
     if is_iterative:
         s, R, t = find_rotation_matrix_iterative(annotated_2d_points=A, vicon_3d_points=B)
@@ -305,10 +369,11 @@ def save_calibration_to_json(path, test_name, is_iterative=False, average_points
 
 def test():
     # All points (19).
-    rmse = save_calibration_to_json(PIXEL_POINTS_JSON_PATH, test_name='all_points')
+    rmse = save_calibration_to_json(PIXEL_POINTS_JSON_PATH, DEPTH_IMAGE_PATH, test_name='all_points')
     print("All points error: " + str(rmse))
 
     # Subset of points (10).
+    '''
     rmse = save_calibration_to_json(PIXEL_POINTS_SUB_SET_JSON_PATH, test_name='subset_points')
     print("Subset of points error: " + str(rmse))
 
@@ -319,6 +384,7 @@ def test():
     # Average the vicon points
     rmse = save_calibration_to_json(PIXEL_POINTS_JSON_PATH, test_name='iterative', average_points=True)
     print("Average vicon points error: " + str(rmse))
+    '''
 
 
 if __name__ == "__main__":
