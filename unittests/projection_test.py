@@ -10,7 +10,7 @@ from data_cleaning.cvat_data_reader import CVATReader
 ANGLE = 'Front'
 POSITION = 'Left'
 PATH = '../../data/Sub007/Sub007/'
-CALIBRATION_PATH = PATH + 'calibration_sub007_{angle}.json'.format(angle=ANGLE.lower())
+CALIBRATION_PATH = PATH + 'calibration_sub007_{angle}_test.json'.format(angle=ANGLE.lower())
 RGB_FRAMES = PATH + '{pos}/{angle}/rgb_frames/'.format(angle=ANGLE.lower(), pos=POSITION)
 VICON_PATH = PATH + '{pos}/{angle}/Sub007_{pos}_{angle2}.csv'.format(angle=ANGLE.lower(), angle2=ANGLE, pos=POSITION)
 ANNOTATION_PATH = '../../annotations_data/Sub007/{angle}/annotations.json'.format(angle=ANGLE)
@@ -69,9 +69,10 @@ class TestProjection(unittest.TestCase):
                 image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
 
             cv2.imshow("Projected", image)
-            cv2.waitKey(0)
+            cv2.waitKey(200)
 
     def test_partial_points(self):
+        print("ghghgghg")
         # Read calibration data
         f = open(CALIBRATION_PATH)
         data = json.load(f)

@@ -43,7 +43,6 @@ def kabsch(A, B, scale):
 
     # special reflection case
     if np.linalg.det(R) < 0:
-        print("Reflection detected")
         Vt[2, :] *= -1
         R = Vt.T * U.T
 

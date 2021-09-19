@@ -77,7 +77,7 @@ def generate_frames_with_depth_mask():
 
     :return: None
     """
-    IMAGE_PATH = '/media/lotemn/Other/project-data/trimmed/Sub013/Squat/Front/depth_frames/'
+    IMAGE_PATH = 'F:/Kimmel-Agmon/data/Sub013/Sub013/Squat/Front/depth_frames/'
 
     images_indices = [6391, 6516, 7700, 7745]
     images = []
@@ -166,9 +166,9 @@ def generate_frames_with_depth_mask_and_histogram_equalization():
 
 
 if __name__ == "__main__":
-    generate_frames_without_processing()
+    #generate_frames_without_processing()
     generate_frames_with_depth_mask()
-    generate_frames_with_depth_mask_and_histogram_equalization()
+    #generate_frames_with_depth_mask_and_histogram_equalization()
 
 
 
