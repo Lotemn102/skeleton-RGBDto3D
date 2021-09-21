@@ -8,6 +8,7 @@ import json
 import cv2
 from shutil import copyfile
 import open3d as o3d
+import pyrealsense2 as rs
 
 from data_cleaning.kabsch import kabsch
 from data_cleaning.cvat_data_reader import CVATReader
@@ -19,7 +20,7 @@ ANGLE = 'Front'
 SUB = 'Sub007'
 PATH_DATA = '../../data/{sub}/{sub}/'.format(sub=SUB)
 PATH_ANNOTATIONS = '../../annotations_data/{sub}/{angle}/'.format(angle=ANGLE, sub=SUB)
-PIXEL_POINTS_JSON_PATH = '../../annotations_data/{sub}/{angle}/annotations.json'.format(angle=ANGLE, sub=SUB)
+PIXEL_POINTS_JSON_PATH = '../../annotations_data/{sub}/{angle}/annotations_all.json'.format(angle=ANGLE, sub=SUB)
 PIXEL_POINTS_SUB_SET_JSON_PATH = '../../annotations_data/{sub}/{angle}/annotations_subset.json'.format(angle=ANGLE, sub=SUB)
 VICON_POINTS_CSV_PATH = '../../annotations_data/{sub}/{angle}/vicon_points.csv'.format(angle=ANGLE, sub=SUB)
 RGB_IMAGE_PATH = '../../annotations_data/{sub}/{angle}/rgb_frame.png'.format(angle=ANGLE, sub=SUB)
@@ -124,7 +125,6 @@ def transform(vicon_3d_points, scale, rotation_matrix, translation_vector):
 
 def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
     # Vicon 3d -> realsense 3d
-    # Convert the points into matrix
     B = np.zeros((len(vicon_3d_points), 3))
 
     for i, keypoint in enumerate(vicon_3d_points):
@@ -135,29 +135,27 @@ def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
     B = np.asmatrix(B)
 
     N = len(vicon_3d_points)
-    target_matrix = np.dot(rotation_matrix, np.dot(B.T, scale)) + np.tile(translation_vector, (1, N))
+    B = np.array(np.dot(B.T, scale))
+    k = np.array(np.dot(rotation_matrix, B))
+    t = np.array(np.tile(translation_vector, (1, N)))
+    target_matrix = k + t
     target_matrix = target_matrix.T
-    target_matrix = target_matrix[:, 0:3]  # Remove last column of ones.
 
     # Realsense 3d -> pixels
-    projected = np.zeros((target_matrix.shape[0], 2))
+    projected = np.zeros((N, 2))
+    projection_matrix = np.zeros((3, 3))
+    projection_matrix[0][0] = 613.2305 # fx
+    projection_matrix[1][1] = 613.3134 # fy
+    projection_matrix[2][2] = 1
+    projection_matrix[0][2] = 319.8690 # ppx
+    projection_matrix[1][2] = 245.8685 # ppy
 
     for i, row in enumerate(target_matrix):
         point = np.array(row)
         point = point.T
-
-        u = point[0] / 1  # Scale by Z value
-        v = point[1] / 1  # Scale by Z value
-
-        '''
-        x = row.T[0]
-        y = row.T[1]
-        z = row.T[2]
-
-        u = x / z
-        v = y / z
-        '''
-
+        uvw = np.dot(projection_matrix, point)
+        u = uvw[0] / uvw[2]  # Scale by Z value
+        v = uvw[1] / uvw[2]  # Scale by Z value
         projected[i] = [int(u), int(v)]
 
     return projected
@@ -367,9 +365,24 @@ def save_calibration_to_json(path, depth_path, test_name, is_iterative=False, av
     copyfile(src=PATH_ANNOTATIONS + file_name, dst=PATH_DATA + file_name)
     return rmse
 
+def get_intrinsics(bag_path):
+    REALSENSE_FPS = 30
+    pipeline = rs.pipeline()
+    config = rs.config()
+    rs.config.enable_device_from_file(config, bag_path)
+    config.enable_stream(stream_type=rs.stream.color, width=640, height=480, format=rs.format.rgb8,
+                         framerate=REALSENSE_FPS)
+    pipeline.start(config)
+
+    frames = pipeline.wait_for_frames()
+    color_frame = frames.get_color_frame()
+    color_intrin = color_frame.profile.as_video_stream_profile().intrinsics
+    return color_intrin
+
+
+
 def test():
-    # All points (19).
-    rmse = save_calibration_to_json(PIXEL_POINTS_JSON_PATH, DEPTH_IMAGE_PATH, test_name='all_points')
+    rmse = save_calibration_to_json(PIXEL_POINTS_SUB_SET_JSON_PATH, DEPTH_IMAGE_PATH, test_name='sub_points')
     print("All points error: " + str(rmse))
 
     # Subset of points (10).
@@ -389,5 +402,8 @@ def test():
 
 if __name__ == "__main__":
     test()
+    #bag_path = '../../data/Sub007_Left_Front.bag'
+    #intrin = get_intrinsics(bag_path)
+    x = 3
 
 

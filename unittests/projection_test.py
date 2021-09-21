@@ -13,7 +13,7 @@ PATH = '../../data/Sub007/Sub007/'
 CALIBRATION_PATH = PATH + 'calibration_sub007_{angle}_all_points.json'.format(angle=ANGLE.lower())
 RGB_FRAMES = PATH + '{pos}/{angle}/rgb_frames/'.format(angle=ANGLE.lower(), pos=POSITION)
 VICON_PATH = PATH + '{pos}/{angle}/Sub007_{pos}_{angle2}.csv'.format(angle=ANGLE, angle2=ANGLE, pos=POSITION)
-ANNOTATION_PATH = '../../annotations_data/Sub007/{angle}/annotations.json'.format(angle=ANGLE)
+ANNOTATION_PATH = '../../annotations_data/Sub007/{angle}/annotations_subset.json'.format(angle=ANGLE)
 
 
 from data_cleaning.vicon_data_reader import VICONReader, KEYPOINTS_NAMES
