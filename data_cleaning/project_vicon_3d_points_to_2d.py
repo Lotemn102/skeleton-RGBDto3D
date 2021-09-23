@@ -97,6 +97,7 @@ def calc_rmse(annotated_2d_points, vicon_3d_points, scale, rotation_matrix, tran
     rmse = math.sqrt(err / N)
     return rmse, diff
 
+'''
 def transform(vicon_3d_points, scale, rotation_matrix, translation_vector):
     """
     Project vicon 3d points to realsense 3d points.
@@ -122,6 +123,7 @@ def transform(vicon_3d_points, scale, rotation_matrix, translation_vector):
     target_matrix = target_matrix.T
     target_matrix = target_matrix[:, 0:3]  # Remove last column of ones.
     return target_matrix
+'''
 
 def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
     # Vicon 3d -> realsense 3d
@@ -154,8 +156,8 @@ def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
         point = np.array(row)
         point = point.T
         uvw = np.dot(projection_matrix, point)
-        u = uvw[0] / uvw[2]  # Scale by Z value
-        v = uvw[1] / uvw[2]  # Scale by Z value
+        u = (uvw[0] / uvw[2]) # Scale by Z value
+        v = (uvw[1] / uvw[2]) # Scale by Z value
         projected[i] = [int(u), int(v)]
 
     return projected

@@ -7,7 +7,7 @@ class RealSenseReader:
         Initialize new real sense data object.
 
         :param bag_file_path: Path to the bag file.
-        :param type: "DEPTH" or "RGB"
+        :param type: "DEPTH" or "RGB" or "BOTH"
         :param frame_rate: The frame rate of the realsense camera.
         """
         self.bag_file_path = bag_file_path
@@ -28,16 +28,32 @@ class RealSenseReader:
         rs.config.enable_device_from_file(config, self.bag_file_path)
 
         # Set the format & type.
-        format = rs.format.rgb8 if self.type == 'RGB' else rs.format.z16
-        type = rs.stream.color if self.type == 'RGB' else rs.stream.depth
-        width = 640 if self.type == 'RGB' else 848
+        if self.type != 'BOTH':
+            format = rs.format.rgb8 if self.type == 'RGB' else rs.format.z16
+            type = rs.stream.color if self.type == 'RGB' else rs.stream.depth
+            width = 640 if self.type == 'RGB' else 848
 
-        if type == rs.stream.depth and self.frame_rate == 15:
-            width = 640
+            if type == rs.stream.depth and self.frame_rate == 15:
+                width = 640
 
-        config.enable_stream(stream_type=type, width=width, height=480, format=format, framerate=self.frame_rate)
+            config.enable_stream(stream_type=type, width=width, height=480, format=format,
+                                 framerate=self.frame_rate)
+        else:
+            format_1 = rs.format.rgb8
+            type_1 = rs.stream.color
+            width_1 = 640
+
+            format_2 = rs.format.z16
+            type_2 = rs.stream.depth
+            width_2 = 848
+
+            config.enable_stream(stream_type=type_1, width=width_1, height=480, format=format_1,
+                                 framerate=self.frame_rate)
+            config.enable_stream(stream_type=type_2, width=width_2, height=480, format=format_2,
+                                 framerate=self.frame_rate)
+
         pipeline.start(config)
-        return pipeline
+        return pipeline, config
 
 """
 Usage examples

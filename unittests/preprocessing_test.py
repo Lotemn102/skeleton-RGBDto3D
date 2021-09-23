@@ -17,7 +17,7 @@ class TestPreprocessing(unittest.TestCase):
 
        :return: None.
        """
-        #REALSENSE_PATH = '/media/lotemn/Other/project-data/frames/Sub002/RealSense/Stand'
+        REALSENSE_PATH = '/media/lotemn/Other/project-data/frames/Sub002/RealSense/Stand'
         VICON_PATH = '../../annotations_data/Sub008/Front/vicon_points.csv'
         REALSENSE_FRAME_RATE = 30
         VICON_FRAME_RATE = 30
@@ -34,26 +34,26 @@ class TestPreprocessing(unittest.TestCase):
         # Init the realsense reader and get the pipeline.
         try:
             # Most of the videos were recorded with FPS of 30.
-            #realsense_reader = RealSenseReader(bag_file_path=REALSENSE_PATH, type='RGB', frame_rate=REALSENSE_FRAME_RATE)
-            #pipeline = realsense_reader.setup_pipeline()
+            realsense_reader = RealSenseReader(bag_file_path=REALSENSE_PATH, type='RGB', frame_rate=REALSENSE_FRAME_RATE)
+            pipeline = realsense_reader.setup_pipeline()
             print(30)
         except:
             # Some videos were recorded with FPS of 15.
-            #REALSENSE_FRAME_RATE = 15
-            #realsense_reader = RealSenseReader(bag_file_path=REALSENSE_PATH, type='RGB', frame_rate=REALSENSE_FRAME_RATE)
-            #pipeline = realsense_reader.setup_pipeline()
+            REALSENSE_FRAME_RATE = 15
+            realsense_reader = RealSenseReader(bag_file_path=REALSENSE_PATH, type='RGB', frame_rate=REALSENSE_FRAME_RATE)
+            pipeline = realsense_reader.setup_pipeline()
             print(15)
 
         # Set-up two windows.
-        #cv2.namedWindow("RGB Stream", cv2.WINDOW_AUTOSIZE)
-        #cv2.namedWindow("Vicon Stream", cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow("RGB Stream", cv2.WINDOW_AUTOSIZE)
+        cv2.namedWindow("Vicon Stream", cv2.WINDOW_AUTOSIZE)
 
         # Start playing the videos.
         while True:
-            #frames = pipeline.wait_for_frames()
-            #color_frame = frames.get_color_frame()
-            #realsense_image = np.asanyarray(color_frame.get_data())
-            #realsense_image = np.rot90(realsense_image, k=3)
+            frames = pipeline.wait_for_frames()
+            color_frame = frames.get_color_frame()
+            realsense_image = np.asanyarray(color_frame.get_data())
+            realsense_image = np.rot90(realsense_image, k=3)
             print(current_frame)
 
             # Read Vicon points
@@ -65,7 +65,6 @@ class TestPreprocessing(unittest.TestCase):
             # Create an empty image to write the vicon points on in later.
             blank = np.zeros(shape=(800, 800, 3), dtype=np.uint8)
             vicon_image = cv2.cvtColor(blank, cv2.COLOR_RGB2BGR)
-            #scale = get_scale(points)
 
             for i, point in enumerate(current_frame_points):
                 x = point.x
@@ -87,7 +86,7 @@ class TestPreprocessing(unittest.TestCase):
             # by default.
 
             # Render realsense image and vicon image.
-            #cv2.imshow("RGB Stream", realsense_image)
+            cv2.imshow("RGB Stream", realsense_image)
             cv2.imshow("Vicon Stream", vicon_image)
             cv2.waitKey(30)
             current_frame = current_frame + (VICON_FRAME_RATE / REALSENSE_FRAME_RATE)
