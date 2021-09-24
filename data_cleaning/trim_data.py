@@ -315,7 +315,10 @@ def rotate_vicon_points_90_degrees_counterclockwise(rotation_axis: str, csv_path
         rotated_points = []
 
         for point in points:
-            transformed = rotation_matix.dot(np.array([point.x, point.y, point.z]))
+            try:
+                transformed = rotation_matix.dot(np.array([point.x, point.y, point.z]))
+            except AttributeError:
+                transformed = rotation_matix.dot(np.array([point[0], point[1], point[2]]))
             rotated_point = Point(transformed[0], transformed[1], transformed[2])
             rotated_points.append(rotated_point)
 
