@@ -134,9 +134,9 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path):
 
     # Rotate points. The axes system of the vicon points and realsense 3d points are different. I've decided to rotate
     # them all according to the the open3d default axes system.
-    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=points_3d)
-    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
-    points_3d = rotated_points
+    # rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=points_3d)
+    # rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
+    # points_3d = rotated_points
 
     # Init matrix with the data. Order of points is according to KEYPOINTS_NAMES.
     A = np.zeros((len(points_3d), 3))
@@ -145,21 +145,21 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path):
         keypoint = points_3d[key]
         x = keypoint[0]
         y = keypoint[1]
-        z = keypoint[1]
+        z = keypoint[2]
         # Convert from meters to mm, since the vicon points are in mm!
         A[i][0] = x * 1000
         A[i][1] = y * 1000
         A[i][2] = z * 1000
 
     #  -------------------------------------- FOR DEBUGGING: Show points -----------------------------------------------
-    pcd = o3d.geometry.PointCloud()
-    points = np.array([(point[0], point[1], point[2]) for point in points_3d.values()])
-    pcd.points = o3d.utility.Vector3dVector(points)
-    visualizer = o3d.visualization.Visualizer()
-    visualizer.create_window(window_name='pixels -> realsense 3d')
-    visualizer.add_geometry(pcd)
-    visualizer.run()
-    visualizer.close()
+    # pcd = o3d.geometry.PointCloud()
+    # points = np.array([(point[0], point[1], point[2]) for point in points_3d.values()])
+    # pcd.points = o3d.utility.Vector3dVector(points)
+    # visualizer = o3d.visualization.Visualizer()
+    # visualizer.create_window(window_name='pixels -> realsense 3d')
+    # visualizer.add_geometry(pcd)
+    # visualizer.run()
+    # visualizer.close()
     # ------------------------------------------------------------------------------------------------------------------
 
     A = np.asmatrix(A)
@@ -189,6 +189,8 @@ def read_vicon_points(vicon_path, points_names):
     # Rotate points. The axes system of the vicon points and realsense 3d points are different. I've decided to rotate
     # them all according to the the open3d default axes system.
     rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=data_3d_dict)
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
     data_3d_dict = rotated_points
 
     B = np.zeros((len(data_3d_dict), 3))
@@ -200,21 +202,21 @@ def read_vicon_points(vicon_path, points_names):
         B[i][2] = keypoint[2]
 
      #  -------------------------------------- FOR DEBUGGING: Show points -----------------------------------------------
-    pcd = o3d.geometry.PointCloud()
-    points = np.array([(point[0], point[1], point[2]) for point in data_3d_dict.values()])
-    pcd.points = o3d.utility.Vector3dVector(points)
-    visualizer = o3d.visualization.Visualizer()
-    visualizer.create_window(window_name='vicon 3d')
-    visualizer.add_geometry(pcd)
-    visualizer.run()
-    visualizer.close()
+    # pcd = o3d.geometry.PointCloud()
+    # points = np.array([(point[0], point[1], point[2]) for point in data_3d_dict.values()])
+    # pcd.points = o3d.utility.Vector3dVector(points)
+    # visualizer = o3d.visualization.Visualizer()
+    # visualizer.create_window(window_name='vicon 3d')
+    # visualizer.add_geometry(pcd)
+    # visualizer.run()
+    # visualizer.close()
     # ------------------------------------------------------------------------------------------------------------------
 
     B = np.asmatrix(B)
     return B
 
-def find_rotation_matrix(realsense_3d_points, vicon_3d_points):
-    s, ret_R, ret_t = kabsch(A=realsense_3d_points, B=vicon_3d_points, scale=False)
+def find_rotation_matrix(realsense_3d_points, vicon_3d_points, scale):
+    s, ret_R, ret_t = kabsch(A=realsense_3d_points, B=vicon_3d_points, scale=scale)
     return s, ret_R, ret_t
 
 def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
@@ -264,6 +266,8 @@ def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_
         dummy_dict[i] = p
 
     rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=dummy_dict)
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
     vicon_3d_points = [p for k, p in rotated_points.items()]
 
     B = np.zeros((len(vicon_3d_points), 3))
@@ -283,14 +287,14 @@ def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_
     target_matrix = target_matrix.T
 
     #  -------------------------------------- FOR DEBUGGING: Show points -----------------------------------------------
-    pcd = o3d.geometry.PointCloud()
-    points = np.array([(point[0], point[1], point[2]) for point in target_matrix])
-    pcd.points = o3d.utility.Vector3dVector(points)
-    visualizer = o3d.visualization.Visualizer()
-    visualizer.create_window(window_name='vicon 3d -> realsense 3d')
-    visualizer.add_geometry(pcd)
-    visualizer.run()
-    visualizer.close()
+    # pcd = o3d.geometry.PointCloud()
+    # points = np.array([(point[0], point[1], point[2]) for point in target_matrix])
+    # pcd.points = o3d.utility.Vector3dVector(points)
+    # visualizer = o3d.visualization.Visualizer()
+    # visualizer.create_window(window_name='vicon 3d -> realsense 3d')
+    # visualizer.add_geometry(pcd)
+    # visualizer.run()
+    # visualizer.close()
     # ------------------------------------------------------------------------------------------------------------------
 
     # Realsense 3d -> pixels
@@ -357,7 +361,17 @@ def rotate_vicon_points_90_degrees_counterclockwise(rotation_axis: str,  points)
 
     return final_points
 
+def calc_rmse(annotated_2d_points, projected_points, scale, rotation_matrix, translation_vector):
+    N = annotated_2d_points.shape[0]
+    diff = annotated_2d_points - projected_points
+    err = annotated_2d_points - projected_points
+    err = np.multiply(err, err)
+    err = np.sum(err)
+    rmse = math.sqrt(err / N)
+    return rmse, diff
+
 def test():
+    # TODO: Project all annotated points!
     # Some consts.
     bag_path = '../../data/Sub007_Left_Front.bag'
     annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
@@ -369,8 +383,9 @@ def test():
                                                                      annotated_pixels_path=annotated_pixels_path)
     vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=points_names)
 
+    # --------------------------------------------- Without scaling ---------------------------------------------------
     # Calculate transformation with Kabsch.
-    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points)
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
 
     # Project the points.
     vicon_reader = VICONReader(vicon_csv_path)
@@ -381,21 +396,108 @@ def test():
 
     # Draw points
     image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in points_names]
 
     for i, row in enumerate(projected):
         x = row[0]
         y = row[1]
 
+        if i not in points_indices:
+            continue
+
         if math.isnan(x) or math.isnan(y):
             continue
 
-        x = int(int(x) / 10) + 200
-        y = int(int(y) / 10) + 200
+        x = int(int(x) / 1) + 0
+        y = int(int(y) / 1) + 0
 
         image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
 
-    cv2.imshow("Projected", image)
-    cv2.waitKey(0)
+    cv2.imwrite("projected_without_scale.png", image)
+
+    # Find the error
+    A = np.zeros((len(points_names), 2))
+    B = np.zeros((len(points_names), 2))
+
+    annotated_points = CVATReader(annotated_pixels_path).get_points()
+
+    for k in list(annotated_points.keys()):
+        if k not in points_names:
+            annotated_points.pop(k, None)
+
+    for i, (keypoint_name, v) in enumerate(annotated_points.items()):
+        A[i][0] = v[0]
+        A[i][1] = v[1]
+
+    counter = 0
+    for i, row in enumerate(projected):
+        if i not in points_indices:
+            continue
+
+        B[counter][0] = row[0]
+        B[counter][1] = row[1]
+        counter += 1
+
+    error, _ = calc_rmse(annotated_2d_points=A, projected_points=B, scale=s, rotation_matrix=R, translation_vector=t)
+    print("Without scaling RMSE: " + str(error))
+
+    # ---------------------------------------------- With scaling -----------------------------------------------------
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=True)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in points_names]
+
+    for i, row in enumerate(projected):
+        x = row[0]
+        y = row[1]
+
+        if i not in points_indices:
+            continue
+
+        if math.isnan(x) or math.isnan(y):
+            continue
+
+        x = int(int(x) / 1) + 0
+        y = int(int(y) / 1) + 0
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_with_scale.png", image)
+
+    # Find the error
+    A = np.zeros((len(points_names), 2))
+    B = np.zeros((len(points_names), 2))
+
+    annotated_points = CVATReader(annotated_pixels_path).get_points()
+
+    for k in list(annotated_points.keys()):
+        if k not in points_names:
+            annotated_points.pop(k, None)
+
+    for i, (keypoint_name, v) in enumerate(annotated_points.items()):
+        A[i][0] = v[0]
+        A[i][1] = v[1]
+
+    counter = 0
+    for i, row in enumerate(projected):
+        if i not in points_indices:
+            continue
+
+        B[counter][0] = row[0]
+        B[counter][1] = row[1]
+        counter += 1
+
+    error, _ = calc_rmse(annotated_2d_points=A, projected_points=B, scale=s, rotation_matrix=R, translation_vector=t)
+    print("With scaling RMSE: " + str(error))
 
 
 if __name__ == "__main__":
