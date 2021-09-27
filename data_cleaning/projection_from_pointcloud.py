@@ -3,11 +3,13 @@ import pyrealsense2 as rs
 import numpy as np
 import open3d as o3d
 import cv2
+from typing import List
 
 from data_cleaning.kabsch import kabsch
 from data_cleaning.realsense_data_reader import RealSenseReader
 from data_cleaning.cvat_data_reader import CVATReader
 from data_cleaning.vicon_data_reader import VICONReader, KEYPOINTS_NAMES
+from data_cleaning.structs import Point
 
 '''
 def read_points_from_pc(bag_file_path):
@@ -55,11 +57,17 @@ def read_points_from_pc(bag_file_path):
     return points
 '''
 
-def read_points_from_deprojection(bag_file_path, annotated_pixels_path):
+def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_size=31, remove_noisy_depth_points=True,
+                                  points_to_remove=None):
     # Read annotated pixels
     # Load 2d points.
     cvat_reader = CVATReader(annotated_pixels_path)
     data_2d_dict = cvat_reader.get_points()
+
+    # Remove points that i found out that had high error rates
+    if points_to_remove is not None:
+        for point_name in points_to_remove:
+            data_2d_dict.pop(point_name, None)
 
     # Open bag file
     reader = RealSenseReader(bag_file_path=bag_file_path, type='BOTH', frame_rate=30)
@@ -94,7 +102,7 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path):
     for keypoint_name, coordinate in data_2d_dict.items():
         # Add all points of kernel size
         neighborhood_points = []
-        kernel_size = 21
+        kernel_size = kernel_size
         for i in range(-1 * int(kernel_size / 2), int(kernel_size / 2) + 1):
             for j in range(-1 * int(kernel_size / 2), int(kernel_size / 2) + 1):
                 x = int(np.round(coordinate[0])) + i
@@ -102,7 +110,7 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path):
                 depth_pixel = [x, y]
                 depth_value = aligned_depth_image[depth_pixel[0]][depth_pixel[1]]
 
-                if depth_value > clipping_distance:
+                if remove_noisy_depth_points and depth_value > clipping_distance:
                     continue
 
                 if depth_value < 1:
@@ -166,11 +174,53 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path):
     points_names = points_3d.keys()
     return A, points_names
 
-def read_vicon_points(vicon_path, points_names):
+def read_vicon_points(vicon_path, points_names, frames_to_average=None):
+    """
+    Read vicon points.
+
+    :param vicon_path: Path to csv file.
+    :param points_names: Names of the clean points we extracted from depth.
+    :param frames_to_average: Number of frames to use for averaging the points. Starting from the first frames.
+    :return: Matrix with the points.
+    """
     # Load 3d points.
     reader_3d = VICONReader(vicon_path) # Vicon points are in mm!
     points = reader_3d.get_points()
-    points = list(points.items())[0][1] # Get first frame's points
+
+    if frames_to_average is None:
+        points = list(points.items())[0][1] # Get first frame's points
+    else:
+        # Average each point for 'frames_to_average' frames, starting from first frame.
+        NUMBER_OF_POINTS = 39
+        temp_dict = {}
+
+        for k in range(NUMBER_OF_POINTS):
+            temp_dict[k] = []
+
+        for i in range(frames_to_average):
+            frame_points = list(points.items())[i][1]
+
+            for j in range(NUMBER_OF_POINTS):
+                temp_dict[j].append(frame_points[j])
+
+        average_points = []
+
+        for v in temp_dict.values():
+            x = []
+            y = []
+            z = []
+
+            for i in range(frames_to_average):
+                x.append(v[i].x)
+                y.append(v[i].y)
+                z.append(v[i].z)
+
+            x = np.mean(x)
+            y = np.mean(y)
+            z = np.mean(z)
+            average_points.append(Point(x, y, z))
+
+        points = average_points
 
     data_3d_dict = {}
 
@@ -361,27 +411,211 @@ def rotate_vicon_points_90_degrees_counterclockwise(rotation_axis: str,  points)
 
     return final_points
 
-def calc_rmse(annotated_2d_points, projected_points, scale, rotation_matrix, translation_vector):
-    N = annotated_2d_points.shape[0]
-    diff = annotated_2d_points - projected_points
-    err = annotated_2d_points - projected_points
+def calc_rmse(A, B):
+    N = A.shape[0]
+    diff = A - B
+    err = A - B
     err = np.multiply(err, err)
     err = np.sum(err)
     rmse = math.sqrt(err / N)
     return rmse, diff
 
-def test():
-    # TODO: Project all annotated points!
+def calc_rmse_projected_points(all_annotated_points_names, annotated_pixels_path, projected_points):
+    """
+    Calculate RMSE between annotated pixel points and projected points.
+
+    :param all_annotated_points_names: N points names.
+    :param annotated_pixels_path: Path to json file of annotated points.
+    :param projected_points: Points after applying Kabsch transformation and projection.
+    :return: rmse.
+    """
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in all_annotated_points_names]
+
+    A = np.zeros((len(all_annotated_points_names), 2))  # Annotated pixels.
+    B = np.zeros((len(all_annotated_points_names), 2))  # Projected pixels.
+
+    annotated_points = CVATReader(annotated_pixels_path).get_points()
+
+    for k in list(annotated_points.keys()):
+        if k not in all_annotated_points_names:
+            annotated_points.pop(k, None)
+
+    for i, (keypoint_name, v) in enumerate(annotated_points.items()):
+        A[i][0] = v[0]
+        A[i][1] = v[1]
+
+    counter = 0
+    for i, row in enumerate(projected_points):
+        if i not in points_indices:
+            continue
+
+        B[counter][0] = row[0]
+        B[counter][1] = row[1]
+        counter += 1
+
+    error, _ = calc_rmse(A=A, B=B)
+    print("{number} of points were used in RMSE calculation.".format(number=A.shape[0]))
+
+    return error
+
+def calc_euclidean_dist(vicon_csv_path, points_deprojected, clean_points_names, scale, rotation_matrix, translate_vector):
+    """
+    Calculate the euclidean distance between each transformed vicon point to it's de-projected 3d realsense.
+    Assuming in both matrices, each row 'i' refers to the same keypoint.
+
+    :param A: N vicon points after applying transformation on them.
+    :param B: N realsense 3d points, after reconstructing them from pixels.
+    :param points_names: List of points names.
+    :return: Dictionary of <keypoint, distance>.
+    """
+    vicon_reader = VICONReader(vicon_csv_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in clean_points_names]
+    A = np.zeros((len(clean_points_names), 3))  # Vicon points after applying transformation.
+    B = np.copy(points_deprojected)  # 3d realsense points after reconstructing them from pixels.
+
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+    temp_list = []
+
+    for i, p in enumerate(all_vicon_points):
+        if i in points_indices:
+            temp_list.append(p)
+
+    all_vicon_points = temp_list
+    dummy_dict = {}
+
+    for i, p in enumerate(all_vicon_points):
+        dummy_dict[i] = p
+
+    # Fix vicon axes system to fit to realsense 3d axes system.
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=dummy_dict)
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
+    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
+    vicon_3d_points = [p for k, p in rotated_points.items()]
+
+    P = np.zeros((len(clean_points_names), 3))
+
+    for i, keypoint in enumerate(vicon_3d_points):
+        try:
+            P[i][0] = keypoint[0]
+            P[i][1] = keypoint[1]
+            P[i][2] = keypoint[2]
+        except TypeError:
+            P[i][0] = keypoint.x
+            P[i][1] = keypoint.y
+            P[i][2] = keypoint.z
+
+    N = len(vicon_3d_points)
+    P = np.array(np.dot(P.T, scale))
+    k = np.array(np.dot(rotation_matrix, P))
+    t = np.array(np.tile(translate_vector, (1, N)))
+    A = k + t
+    A = A.T
+
+    # --------------------------------------- FOR DEBUGGING: Visualize points ------------------------------------------
+    # # A
+    # pcd = o3d.geometry.PointCloud()
+    # points = np.array([(point[0], point[1], point[2]) for point in A])
+    # pcd.points = o3d.utility.Vector3dVector(points)
+    # visualizer = o3d.visualization.Visualizer()
+    # visualizer.create_window(window_name='vicon -> realsense 3d')
+    # visualizer.add_geometry(pcd)
+    # visualizer.run()
+    # visualizer.close()
+    #
+    # # B
+    # pcd = o3d.geometry.PointCloud()
+    # points = np.array([(point[0], point[1], point[2]) for point in B])
+    # pcd.points = o3d.utility.Vector3dVector(points)
+    # visualizer = o3d.visualization.Visualizer()
+    # visualizer.create_window(window_name='pixels -> realsense 3d')
+    # visualizer.add_geometry(pcd)
+    # visualizer.run()
+    # visualizer.close()
+    # ------------------------------------------------------------------------------------------------------------------
+
+    if type(clean_points_names) is not List:
+        clean_points_names = list(clean_points_names)
+
+    distance_dict = {} # Distances are in mm
+    N = A.shape[0]
+
+    for i in range(N):
+        p1 = A[i]
+        p2 = B[i]
+        distance = np.linalg.norm(p1-p2) # Numpy's implementation for euclidean distance
+        keypoint_name = clean_points_names[i]
+        distance_dict[keypoint_name] = distance
+
+    distances = list(distance_dict.values())
+    average_distance = np.mean(distances)
+    return distance_dict, average_distance
+
+def find_best_kernel_size():
     # Some consts.
     bag_path = '../../data/Sub007_Left_Front.bag'
     annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
     vicon_csv_path = '../../annotations_data/Sub007/Front/vicon_points.csv'
     rgb_frame_path = '../../annotations_data/Sub007/Front/rgb_frame.png'
 
+    # Get annotated points names, for later visualizing.
+    cvat_reader = CVATReader(annotated_pixels_path)
+    data_2d_dict = cvat_reader.get_points()
+    annotated_points_names = data_2d_dict.keys()
+
+    min_error = np.inf
+    min_kernel = 0
+    errors = []
+
     # Get points.
-    points_deprojected, points_names = read_points_from_deprojection(bag_file_path=bag_path,
-                                                                     annotated_pixels_path=annotated_pixels_path)
-    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=points_names)
+    for kernel in range(1, 87, 2):
+        points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                               annotated_pixels_path=annotated_pixels_path,
+                                                                               kernel_size=kernel)
+        vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
+
+        # Calculate transformation with Kabsch.
+        s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
+
+        # Project the points.
+        vicon_reader = VICONReader(vicon_csv_path)
+        all_vicon_points = vicon_reader.get_points()
+        all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+        projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                               bag_file_path=bag_path)
+
+        # Find the error of the projection - RMSE
+        error = calc_rmse_projected_points(annotated_points_names, annotated_pixels_path, projected)
+        errors.append(error)
+
+        if error < min_error:
+            min_error = error
+            min_kernel = kernel
+
+        print("Kernel: {kernel}, RMSE: {error}".format(kernel=kernel, error=error))
+
+    print("Best kernel is {kernel}, with error of {error}".format(kernel=min_kernel, error=min_error))
+
+def test_no_improvements():
+    # Some consts.
+    bag_path = '../../data/Sub007_Left_Front.bag'
+    annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
+    vicon_csv_path = '../../annotations_data/Sub007/Front/vicon_points.csv'
+    rgb_frame_path = '../../annotations_data/Sub007/Front/rgb_frame.png'
+
+    print("Finding Kabsch without improvements...")
+
+    # Get annotated points names.
+    reader = CVATReader(annotated_pixels_path)
+    annotated_points_names = reader.get_points().keys()
+
+    # Get points.
+    # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                     annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=1, # Best kernel size is 31
+                                                                           remove_noisy_depth_points=False)
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
 
     # --------------------------------------------- Without scaling ---------------------------------------------------
     # Calculate transformation with Kabsch.
@@ -396,11 +630,11 @@ def test():
 
     # Draw points
     image = cv2.imread(rgb_frame_path)
-    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in points_names]
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in annotated_points_names]
 
     for i, row in enumerate(projected):
-        x = row[0]
-        y = row[1]
+        x = int(row[0])
+        y = int(row[1])
 
         if i not in points_indices:
             continue
@@ -408,38 +642,19 @@ def test():
         if math.isnan(x) or math.isnan(y):
             continue
 
-        x = int(int(x) / 1) + 0
-        y = int(int(y) / 1) + 0
-
         image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
 
-    cv2.imwrite("projected_without_scale.png", image)
+    cv2.imwrite("projected_without_scale_without_improvements.png", image)
 
-    # Find the error
-    A = np.zeros((len(points_names), 2))
-    B = np.zeros((len(points_names), 2))
-
-    annotated_points = CVATReader(annotated_pixels_path).get_points()
-
-    for k in list(annotated_points.keys()):
-        if k not in points_names:
-            annotated_points.pop(k, None)
-
-    for i, (keypoint_name, v) in enumerate(annotated_points.items()):
-        A[i][0] = v[0]
-        A[i][1] = v[1]
-
-    counter = 0
-    for i, row in enumerate(projected):
-        if i not in points_indices:
-            continue
-
-        B[counter][0] = row[0]
-        B[counter][1] = row[1]
-        counter += 1
-
-    error, _ = calc_rmse(annotated_2d_points=A, projected_points=B, scale=s, rotation_matrix=R, translation_vector=t)
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
     print("Without scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                          clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                          translate_vector=t)
+    print("Without scaling average euclidean distance: " + str(average_dist))
 
     # ---------------------------------------------- With scaling -----------------------------------------------------
     # Calculate transformation with Kabsch.
@@ -454,11 +669,10 @@ def test():
 
     # Draw points
     image = cv2.imread(rgb_frame_path)
-    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in points_names]
 
     for i, row in enumerate(projected):
-        x = row[0]
-        y = row[1]
+        x = int(row[0])
+        y = int(row[1])
 
         if i not in points_indices:
             continue
@@ -466,42 +680,461 @@ def test():
         if math.isnan(x) or math.isnan(y):
             continue
 
-        x = int(int(x) / 1) + 0
-        y = int(int(y) / 1) + 0
-
         image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
 
-    cv2.imwrite("projected_with_scale.png", image)
+    cv2.imwrite("projected_with_scale_without_improvements.png", image)
 
-    # Find the error
-    A = np.zeros((len(points_names), 2))
-    B = np.zeros((len(points_names), 2))
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
+    print("With scaling RMSE: " + str(error))
 
-    annotated_points = CVATReader(annotated_pixels_path).get_points()
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                          clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                          translate_vector=t)
+    print("With scaling average euclidean distance: " + str(average_dist))
+    print("Scale is {s}".format(s=s))
+    print("--------------------------------------------------")
 
-    for k in list(annotated_points.keys()):
-        if k not in points_names:
-            annotated_points.pop(k, None)
+def test_with_improvements_1():
+    """
+    Improvements:
+       - Removing noisy depth points.
+       - Averaging depth values over space (best kernel is 31).
+    """
+    # Some consts.
+    bag_path = '../../data/Sub007_Left_Front.bag'
+    annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
+    vicon_csv_path = '../../annotations_data/Sub007/Front/vicon_points.csv'
+    rgb_frame_path = '../../annotations_data/Sub007/Front/rgb_frame.png'
 
-    for i, (keypoint_name, v) in enumerate(annotated_points.items()):
-        A[i][0] = v[0]
-        A[i][1] = v[1]
+    print("Finding Kabsch with following improvements: Removing noisy depth points, averaging depth values over space...")
+    # Get points.
 
-    counter = 0
+    # Get annotated points names.
+    reader = CVATReader(annotated_pixels_path)
+    annotated_points_names = reader.get_points().keys()
+
+    # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                     annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31, # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True)
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
+
+    # --------------------------------------------- Without scaling ---------------------------------------------------
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1] # Get first frame's points
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in annotated_points_names]
+
     for i, row in enumerate(projected):
+        x = int(row[0])
+        y = int(row[1])
+
         if i not in points_indices:
             continue
 
-        B[counter][0] = row[0]
-        B[counter][1] = row[1]
-        counter += 1
+        if math.isnan(x) or math.isnan(y):
+            continue
 
-    error, _ = calc_rmse(annotated_2d_points=A, projected_points=B, scale=s, rotation_matrix=R, translation_vector=t)
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_without_scale_with_improvements_1.png", image)
+
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
+    print("Without scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                          clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                          translate_vector=t)
+    print("Without scaling average euclidean distance: " + str(average_dist))
+
+    # ---------------------------------------------- With scaling -----------------------------------------------------
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=True)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+
+    for i, row in enumerate(projected):
+        x = int(row[0])
+        y = int(row[1])
+
+        if i not in points_indices:
+            continue
+
+        if math.isnan(x) or math.isnan(y):
+            continue
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_with_scale_with_improvements_1.png", image)
+
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
     print("With scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                          clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                          translate_vector=t)
+    print("With scaling average euclidean distance: " + str(average_dist))
+    print("Scale is {s}".format(s=s))
+    print("--------------------------------------------------")
+
+def test_with_improvements_2():
+    """
+    Improvements:
+       - Removing noisy depth points.
+       - Averaging depth values over space (best kernel is 31).
+       - Calculating Kabsch and finding error for each point, removing points with high error rates and re-calculating
+         Kabsch.
+    """
+    # Some consts.
+    bag_path = '../../data/Sub007_Left_Front.bag'
+    annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
+    vicon_csv_path = '../../annotations_data/Sub007/Front/vicon_points.csv'
+    rgb_frame_path = '../../annotations_data/Sub007/Front/rgb_frame.png'
+
+    print("Finding Kabsch with following improvements: Removing noisy depth points, averaging depth values over space,"
+          " removing points with high error rates and re-calulcating Kabsch...")
+    # Get points.
+
+    # Get annotated points names.
+    reader = CVATReader(annotated_pixels_path)
+    annotated_points_names = reader.get_points().keys()
+
+    # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31, # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True)
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
+
+    # --------------------------------------------- Without scaling ---------------------------------------------------
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                          clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                          translate_vector=t)
+
+    # Find 3 points with biggest distance, remove them and re-run Kabsch.
+    sorted_points = {k: v for k, v in sorted(distances.items(), key=lambda item: item[1])}
+    p1_name = sorted_points.popitem()[0]
+    p2_name = sorted_points.popitem()[0]
+    p3_name = sorted_points.popitem()[0]
+
+    # Start all over again with new points...
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31, # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True,
+                                                                           points_to_remove=[p1_name, p2_name, p3_name])
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
+
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in annotated_points_names]
+
+    for i, row in enumerate(projected):
+        x = int(row[0])
+        y = int(row[1])
+
+        if i not in points_indices:
+            continue
+
+        if math.isnan(x) or math.isnan(y):
+            continue
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_without_scale_with_improvements_2.png", image)
+
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
+    print("Without scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                                  clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                                  translate_vector=t)
+    print("Without scaling average euclidean distance: " + str(average_dist))
+
+    # ---------------------------------------------- With scaling -----------------------------------------------------
+    # Get points.
+    # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31,  # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True)
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
+
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=True)
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                                  clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                                  translate_vector=t)
+
+    # Find 3 points with biggest distance, remove them and re-run Kabsch.
+    sorted_points = {k: v for k, v in sorted(distances.items(), key=lambda item: item[1])}
+    p1_name = sorted_points.popitem()[0]
+    p2_name = sorted_points.popitem()[0]
+    p3_name = sorted_points.popitem()[0]
+
+    # Start all over again with new points...
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31,  # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True,
+                                                                           points_to_remove=[p1_name, p2_name, p3_name])
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names)
+
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=True)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in annotated_points_names]
+
+    for i, row in enumerate(projected):
+        x = int(row[0])
+        y = int(row[1])
+
+        if i not in points_indices:
+            continue
+
+        if math.isnan(x) or math.isnan(y):
+            continue
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_with_scale_with_improvements_2.png", image)
+
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
+    print("With scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                                  clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                                  translate_vector=t)
+    print("With scaling average euclidean distance: " + str(average_dist))
+    print("Scale is {s}".format(s=s))
+    print("--------------------------------------------------")
+
+def test_with_improvements_3(average_frames=5):
+    """
+    Improvements:
+       - Removing noisy depth points.
+       - Averaging depth values over space (best kernel is 31).
+       - Calculating Kabsch and finding error for each point, removing points with high error rates and re-calculating
+         Kabsch.
+       - Averaging the vicon points over several frames.
+    """
+    # Some consts.
+    bag_path = '../../data/Sub007_Left_Front.bag'
+    annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
+    vicon_csv_path = '../../annotations_data/Sub007/Front/vicon_points.csv'
+    rgb_frame_path = '../../annotations_data/Sub007/Front/rgb_frame.png'
+
+    print("Finding Kabsch with following improvements: Removing noisy depth points, averaging depth values over space,"
+          " removing points with high error rates and re-calulcating Kabsch, averaging vicon points...")
+    # Get points.
+
+    # Get annotated points names.
+    reader = CVATReader(annotated_pixels_path)
+    annotated_points_names = reader.get_points().keys()
+
+    # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31, # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True)
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names, frames_to_average=average_frames)
+
+    # --------------------------------------------- Without scaling ---------------------------------------------------
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                          clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                          translate_vector=t)
+
+    # Find 3 points with biggest distance, remove them and re-run Kabsch.
+    sorted_points = {k: v for k, v in sorted(distances.items(), key=lambda item: item[1])}
+    p1_name = sorted_points.popitem()[0]
+    p2_name = sorted_points.popitem()[0]
+    p3_name = sorted_points.popitem()[0]
+
+    # Start all over again with new points...
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31, # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True,
+                                                                           points_to_remove=[p1_name, p2_name, p3_name])
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names, frames_to_average=average_frames)
+
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=False)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in annotated_points_names]
+
+    for i, row in enumerate(projected):
+        x = int(row[0])
+        y = int(row[1])
+
+        if i not in points_indices:
+            continue
+
+        if math.isnan(x) or math.isnan(y):
+            continue
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_without_scale_with_improvements_3.png", image)
+
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
+    print("Without scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                                  clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                                  translate_vector=t)
+    print("Without scaling average euclidean distance: " + str(average_dist))
+
+    # ---------------------------------------------- With scaling -----------------------------------------------------
+    # Get points.
+    # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31,  # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True)
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names, frames_to_average=average_frames)
+
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=True)
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                                  clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                                  translate_vector=t)
+
+    # Find 3 points with biggest distance, remove them and re-run Kabsch.
+    sorted_points = {k: v for k, v in sorted(distances.items(), key=lambda item: item[1])}
+    p1_name = sorted_points.popitem()[0]
+    p2_name = sorted_points.popitem()[0]
+    p3_name = sorted_points.popitem()[0]
+
+    # Start all over again with new points...
+    points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=bag_path,
+                                                                           annotated_pixels_path=annotated_pixels_path,
+                                                                           kernel_size=31,  # Best kernel size is 31
+                                                                           remove_noisy_depth_points=True,
+                                                                           points_to_remove=[p1_name, p2_name, p3_name])
+    vicon_points = read_vicon_points(vicon_path=vicon_csv_path, points_names=clean_points_names, frames_to_average=average_frames)
+
+    # Calculate transformation with Kabsch.
+    s, R, t = find_rotation_matrix(realsense_3d_points=points_deprojected, vicon_3d_points=vicon_points, scale=True)
+
+    # Project the points.
+    vicon_reader = VICONReader(vicon_csv_path)
+    all_vicon_points = vicon_reader.get_points()
+    all_vicon_points = list(all_vicon_points.items())[0][1]  # Get first frame's points
+
+    projected = project_rs(vicon_3d_points=all_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+                           bag_file_path=bag_path)
+
+    # Draw points
+    image = cv2.imread(rgb_frame_path)
+    points_indices = [i for i, keypoint in enumerate(KEYPOINTS_NAMES) if keypoint in annotated_points_names]
+
+    for i, row in enumerate(projected):
+        x = int(row[0])
+        y = int(row[1])
+
+        if i not in points_indices:
+            continue
+
+        if math.isnan(x) or math.isnan(y):
+            continue
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
+
+    cv2.imwrite("projected_with_scale_with_improvements_3.png", image)
+
+    # Find the error of the projection - RMSE
+    error = calc_rmse_projected_points(clean_points_names, annotated_pixels_path, projected)
+    print("With scaling RMSE: " + str(error))
+
+    # Find the error of Kabsch transformation - Euclidean distance.
+    distances, average_dist = calc_euclidean_dist(vicon_csv_path=vicon_csv_path, points_deprojected=points_deprojected,
+                                                  clean_points_names=clean_points_names, scale=s, rotation_matrix=R,
+                                                  translate_vector=t)
+    print("With scaling average euclidean distance: " + str(average_dist))
+    print("Scale is {s}".format(s=s))
+    print("--------------------------------------------------")
 
 
 if __name__ == "__main__":
-    test()
+    test_no_improvements()
+    test_with_improvements_1()
+    test_with_improvements_2()
+    test_with_improvements_3(10)
+
 
 
 
