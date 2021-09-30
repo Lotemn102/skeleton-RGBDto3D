@@ -1,0 +1,497 @@
+[
+  {
+    "sub_name": "Sub001",
+    "Squat": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub002",
+    "Squat": {
+      "Back": 9700,
+      "Front": 209930,
+      "Side": 154145,
+      "Vicon": 440
+    },
+    "Stand": {
+      "Back": 7340,
+      "Front": 207471,
+      "Side": 151812,
+      "Vicon": 39
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub003",
+    "Squat": {
+      "Back": 65087,
+      "Front": 148996,
+      "Side": 149478,
+      "Vicon": 1260
+    },
+    "Stand": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Tight": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Left": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    },
+    "Right": {
+      "Back": 0,
+      "Front": 0,
+      "Side": 0,
+      "Vicon": 0
+    }
+  },
+  {
+    "sub_name": "Sub004",
+    "Squat": {
+      "Back": 39596,
+      "Front": 19827,
+      "Side": 20385,
+      "Vicon": "Squat1 or Squat2?"
+    },
+    "Stand": {
+      "Back": 29731,
+      "Front": 6352,
+      "Side": 6907,
+      "Vicon": 1555
+    },
+    "Tight": {
+      "Back": 37196,
+      "Front": 13812,
+      "Side": 14367,
+      "Vicon": 1598
+    },
+    "Left": {
+      "Back": 33116,
+      "Front": 11540,
+      "Side": 12100,
+      "Vicon": 1458
+    },
+    "Right": {
+      "Back": 34924,
+      "Front": 9733,
+      "Side": 10291,
+      "Vicon": 1448
+    }
+  },
+  {
+    "sub_name": "Sub005",
+    "Squat": {
+      "Back": 114984,
+      "Front": 9213,
+      "Side": 9062,
+      "Vicon": 1376
+    },
+    "Stand": {
+      "Back": 107221,
+      "Front": 1447,
+      "Side": 1297,
+      "Vicon": 1483
+    },
+    "Tight": {
+      "Back": 111964,
+      "Front": 6195,
+      "Side": 6040,
+      "Vicon": 1634
+    },
+    "Left": {
+      "Back": 110288,
+      "Front": 4518,
+      "Side": 4367,
+      "Vicon": 1245
+    },
+    "Right": {
+      "Back": 108761,
+      "Front": 2991,
+      "Side": 2839,
+      "Vicon": 1366
+    }
+  },
+  {
+    "sub_name": "Sub006",
+    "Squat": {
+      "Back": 28635,
+      "Front": 16030,
+      "Side": 16171,
+      "Vicon": 1280
+    },
+    "Stand": {
+      "Back": 13727,
+      "Front": 6057,
+      "Side": 6199,
+      "Vicon": 3524
+    },
+    "Tight": {
+      "Back": 26026,
+      "Front": 13423,
+      "Side": 13570,
+      "Vicon": 1352
+    },
+    "Left": {
+      "Back": 23826,
+      "Front": 11218,
+      "Side": 11361,
+      "Vicon": 3779
+    },
+    "Right": {
+      "Back": 21742,
+      "Front": 9136,
+      "Side": 9278,
+      "Vicon": 1541
+    }
+  },
+  {
+    "sub_name": "Sub007",
+    "Squat": {
+      "Back": 11935,
+      "Front": 625,
+      "Side": 1298,
+      "Vicon": 1160
+    },
+    "Stand": {
+      "Back": 109,
+      "Front": 2212,
+      "Side": 2279,
+      "Vicon": 3927
+    },
+    "Tight": {
+      "Back": 6052,
+      "Front": 8157,
+      "Side": 8219,
+      "Vicon": 1200
+    },
+    "Left": {
+      "Back": 3741,
+      "Front": 5844,
+      "Side": 5904,
+      "Vicon": 1277
+    },
+    "Right": {
+      "Back": 1832,
+      "Front": 3934,
+      "Side": 4000,
+      "Vicon": 1250
+    }
+  },
+  {
+    "sub_name": "Sub008",
+    "Squat": {
+      "Back": 124429,
+      "Front": 113108,
+      "Side": 113778,
+      "Vicon": 1405
+    },
+    "Stand": {
+      "Back": 111326,
+      "Front": 100017,
+      "Side": 100686,
+      "Vicon": 1503
+    },
+    "Tight": {
+      "Back": 120142,
+      "Front": 108830,
+      "Side": 109503,
+      "Vicon": 1437
+    },
+    "Left": {
+      "Back": 116520,
+      "Front": 105215,
+      "Side": 105882,
+      "Vicon": 1356
+    },
+    "Right": {
+      "Back": 113348,
+      "Front": 102017,
+      "Side": 102715,
+      "Vicon": 1790
+    }
+  },
+  {
+    "sub_name": "Sub009",
+    "Squat": {
+      "Back": 83706,
+      "Front": 6600,
+      "Side": 6730,
+      "Vicon": 1290
+    },
+    "Stand": {
+      "Back": 76695,
+      "Front": 5110,
+      "Side": 5160,
+      "Vicon": 1790
+    },
+    "Tight": {
+      "Back": 82058,
+      "Front": 3307,
+      "Side": 3440,
+      "Vicon": 1330
+    },
+    "Left": {
+      "Back": 79187,
+      "Front": 10100,
+      "Side": 10150,
+      "Vicon": 1990
+    },
+    "Right": {
+      "Back": 78370,
+      "Front": 8461,
+      "Side": 8510,
+      "Vicon": 1185
+    }
+  },
+  {
+    "sub_name": "Sub010",
+    "Squat": {
+      "Back": 6701,
+      "Front": 18195,
+      "Side": 18467,
+      "Vicon": 1472
+    },
+    "Stand": {
+      "Back": 737,
+      "Front": 6269,
+      "Side": 6541,
+      "Vicon": 1287
+    },
+    "Tight": {
+      "Back": 3886,
+      "Front": 12565,
+      "Side": 12838,
+      "Vicon": 1149
+    },
+    "Left": {
+      "Back": 3126,
+      "Front": 11046,
+      "Side": 11317,
+      "Vicon": 1462
+    },
+    "Right": {
+      "Back": 2061,
+      "Front": 8915,
+      "Side": 9186,
+      "Vicon": 1546
+    }
+  },
+  {
+    "sub_name": "Sub011",
+    "Squat": {
+      "Back": 11370,
+      "Front": 3575,
+      "Side": 4057,
+      "Vicon": 1133
+    },
+    "Stand": {
+      "Back": 1372,
+      "Front": 2714,
+      "Side": 2894,
+      "Vicon": 1554
+    },
+    "Tight": {
+      "Back": 9977,
+      "Front": 791,
+      "Side": 1279,
+      "Vicon": 1220
+    },
+    "Left": {
+      "Back": 2930,
+      "Front": 5833,
+      "Side": 6014,
+      "Vicon": 1057
+    },
+    "Right": {
+      "Back": 2319,
+      "Front": 4608,
+      "Side": 4793,
+      "Vicon": 1250
+    }
+  },
+  {
+    "sub_name": "Sub012",
+    "Squat": {
+      "Back": 35880,
+      "Front": 13051,
+      "Side": 13131,
+      "Vicon": 1123
+    },
+    "Stand": {
+      "Back": 32063,
+      "Front": 5415,
+      "Side": 5490,
+      "Vicon": 1305
+    },
+    "Tight": {
+      "Back": 34574,
+      "Front": 10438,
+      "Side": 10516,
+      "Vicon": 1157
+    },
+    "Left": {
+      "Back": 33015,
+      "Front": 7318,
+      "Side": 7397,
+      "Vicon": 1218
+    },
+    "Right": {
+      "Back": 33810,
+      "Front": 8909,
+      "Side": 8987,
+      "Vicon": 1155
+    }
+  },
+  {
+    "sub_name": "Sub013",
+    "Squat": {
+      "Back": 46424,
+      "Front": 6387,
+      "Side": 6678,
+      "Vicon": 1295
+    },
+    "Stand": {
+      "Back": 37896,
+      "Front": 36607,
+      "Side": 36678,
+      "Vicon": 2920
+    },
+    "Tight": {
+      "Back": 44229,
+      "Front": 4188,
+      "Side": 4473,
+      "Vicon": 1228
+    },
+    "Left": {
+      "Back": 42082,
+      "Front": 2039,
+      "Side": 2326,
+      "Vicon": 1295
+    },
+    "Right": {
+      "Back": 40802,
+      "Front": 762,
+      "Side": 1047,
+      "Vicon": 1385
+    }
+  },
+  {
+    "sub_name": "Sub014",
+    "Squat": {
+      "Back": 50149,
+      "Front": 9809,
+      "Side": 12546,
+      "Vicon": 1435
+    },
+    "Stand": {
+      "Back": 42350,
+      "Front": 2016,
+      "Side": 4753,
+      "Vicon": 1550
+    },
+    "Tight": {
+      "Back": 47376,
+      "Front": 7043,
+      "Side": 9785,
+      "Vicon": 2094
+    },
+    "Left": {
+      "Back": 45544,
+      "Front": 5205,
+      "Side": 7944,
+      "Vicon": 1597
+    },
+    "Right": {
+      "Back": 44141,
+      "Front": 3802,
+      "Side": 6543,
+      "Vicon": 1379
+    }
+  },
+  {
+    "sub_name": "Sub015",
+    "Squat": {
+      "Back": 47615,
+      "Front": 6728,
+      "Side": 6772,
+      "Vicon": 1178
+    },
+    "Stand": {
+      "Back": 38162,
+      "Front": 38740,
+      "Side": 39245,
+      "Vicon": 1798
+    },
+    "Tight": {
+      "Back": 45346,
+      "Front": 4458,
+      "Side": 4505,
+      "Vicon": 1243
+    },
+    "Left": {
+      "Back": 43789,
+      "Front": 2903,
+      "Side": 2946,
+      "Vicon": 1252
+    },
+    "Right": {
+      "Back": 42255,
+      "Front": 1368,
+      "Side": 1414,
+      "Vicon": 1027
+    }
+  }
+]
