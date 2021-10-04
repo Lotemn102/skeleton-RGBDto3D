@@ -3,21 +3,14 @@ import torch
 from torch.utils.data import DataLoader
 import numpy as np
 from tqdm import tqdm
+import wandb
 
 from learning3d.data_utils import UserData
 from learning3d.models import PointNet
 from learning3d.models import Classifier
 from data_reader import read
+import config
 
-
-BATCH_SIZE = 32
-NUM_WORKERS = 2
-DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-EMBEDDING_DIMS = 1024
-CHECKPOINT_PATH = None
-OPTIMIZER = 'Adam'
-NUM_EPOCHS = 200
-EXP_NAME = 'run_01'
 
 
 def test_one_epoch(device, model, test_loader):
@@ -83,6 +76,18 @@ def train_one_epoch(device, model, train_loader, optimizer):
 
 
 def main():
+    # Init WANDB for metadata saving
+    wandb.init(project='skeleton-to-age', entity='lotemn102', name=config.RUN_NAME)
+
+    # Save the parameters to WANDB
+    wand_config = wandb.config
+    wand_config.learning_rate = config.LEARNING_RATE
+    wand_config.batch_size = config.BATCH_SIZE
+    wand_config.num_workers = config.NUM_WORKERS
+    wand_config.embedding_dims = config.EMBEDDING_DIMS
+    wand_config.optimizer = config.OPTIMIZER
+    wand_config.num_epochs = config.NUM_EPOCHS
+
     train_dict = {}
     test_dict = {}
 
@@ -94,28 +99,32 @@ def main():
     train_set = UserData('classification', train_dict)
     test_set = UserData('classification', test_dict)
 
-    train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True, drop_last=True,
-                              num_workers=NUM_WORKERS)
-    test_loader = DataLoader(test_set, batch_size=BATCH_SIZE, shuffle=False, drop_last=False,
-                             num_workers=NUM_WORKERS)
+    train_loader = DataLoader(train_set, batch_size=config.BATCH_SIZE, shuffle=True, drop_last=True,
+                              num_workers=config.NUM_WORKERS)
+    test_loader = DataLoader(test_set, batch_size=config.BATCH_SIZE, shuffle=False, drop_last=False,
+                             num_workers=config.NUM_WORKERS)
 
     # Create PointNet Model.
-    ptnet = PointNet(emb_dims=EMBEDDING_DIMS, use_bn=True)
-    model = Classifier(feature_model=ptnet, num_classes=100)
-    model.to(DEVICE)
+    ptnet = PointNet(emb_dims=config.EMBEDDING_DIMS, use_bn=True)
+    model = Classifier(feature_model=ptnet, num_classes=2)
+    model.to(config.DEVICE)
+
+    # Watch model
+    wandb.watch(model)
 
     checkpoint = None
 
-    if CHECKPOINT_PATH:
-        assert os.path.isfile(CHECKPOINT_PATH)
-        checkpoint = torch.load(CHECKPOINT_PATH)
+    if config.LOAD_CHECKPOINT:
+        assert os.path.isfile(config.CHECKPOINT_PATH)
+        checkpoint = torch.load(config.CHECKPOINT_PATH)
         model.load_state_dict(checkpoint['model'])
+        print("Starting training from checkpoint {n}.".format(n=config.CHECKPOINT_PATH))
 
     learnable_params = filter(lambda p: p.requires_grad, model.parameters())
-    if OPTIMIZER == 'Adam':
+    if config.OPTIMIZER == 'Adam':
         optimizer = torch.optim.Adam(learnable_params)
     else:
-        optimizer = torch.optim.SGD(learnable_params, lr=0.1)
+        optimizer = torch.optim.SGD(learnable_params, lr=config.LEARNING_RATE)
 
     if checkpoint is not None:
         min_loss = checkpoint['min_loss']
@@ -123,26 +132,36 @@ def main():
 
     best_test_loss = np.inf
 
-    for epoch in range(NUM_EPOCHS):
-        train_loss, train_accuracy = train_one_epoch(DEVICE, model, train_loader, optimizer)
-        test_loss, test_accuracy = test_one_epoch(DEVICE, model, test_loader)
+    for epoch in range(config.NUM_EPOCHS):
+        train_loss, train_accuracy = train_one_epoch(config.DEVICE, model, train_loader, optimizer)
+        test_loss, test_accuracy = test_one_epoch(config.DEVICE, model, test_loader)
 
-        # if test_loss < best_test_loss:
-        #     best_test_loss = test_loss
-        #     snap = {'epoch': epoch + 1,
-        #             'model': model.state_dict(),
-        #             'min_loss': best_test_loss,
-        #             'optimizer': optimizer.state_dict(), }
-        #     torch.save(snap, 'checkpoints/%s/models/best_model_snap.t7' % (EXP_NAME))
-        #     torch.save(model.state_dict(), 'checkpoints/%s/models/best_model.t7' % (EXP_NAME))
-        #     torch.save(model.feature_model.state_dict(), 'checkpoints/%s/models/best_ptnet_model.t7' % (EXP_NAME))
+        # Watch losses
+        wandb.log({"train loss": train_loss, "test loss": test_loss, "train accuracy": train_accuracy,
+                   "test accuracy": test_accuracy})
+        # wandb.log({"test loss": test_loss})
+        # wandb.log({"train accuracy": train_accuracy})
+        # wandb.log({"test accuracy": test_accuracy})
+
+        if test_loss < best_test_loss:
+            best_test_loss = test_loss
+
+            snap = {'epoch': epoch + 1,
+                    'model': model.state_dict(),
+                    'min_loss': best_test_loss,
+                    'optimizer': optimizer.state_dict(), }
+            torch.save(snap, 'checkpoints/{run_name}.pth.tar'.format(run_name=config.RUN_NAME))
+            #torch.save(model.state_dict(), 'checkpoints/%s/models/best_model.t7' % (EXP_NAME))
+            #torch.save(model.feature_model.state_dict(), 'checkpoints/%s/models/best_ptnet_model.t7' % (EXP_NAME))
 
         # torch.save(snap, 'checkpoints/%s/models/model_snap.t7' % (EXP_NAME))
         # torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % (EXP_NAME))
         # torch.save(model.feature_model.state_dict(), 'checkpoints/%s/models/ptnet_model.t7' % (EXP_NAME))
 
-        print('EPOCH:: %d, Traininig Loss: %f, Testing Loss: %f, Best Loss: %f' % (epoch + 1, train_loss, test_loss, best_test_loss))
-        print('EPOCH:: %d, Traininig Accuracy: %f, Testing Accuracy: %f' % (epoch + 1, train_accuracy, test_accuracy))
+        # torch.save(model, 'checkpoints/{run_name}.pth.tar'.format(run_name=config.RUN_NAME))
+        print('Checkpoint saved.')
+        print('EPOCH:: %d, Training Loss: %f, Testing Loss: %f, Best Loss: %f' % (epoch + 1, train_loss, test_loss, best_test_loss))
+        print('EPOCH:: %d, Training Accuracy: %f, Testing Accuracy: %f' % (epoch + 1, train_accuracy, test_accuracy))
 
 if __name__ == "__main__":
     main()
