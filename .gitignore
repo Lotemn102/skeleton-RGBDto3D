@@ -13,6 +13,8 @@ __pycache__/
 *.raw
 data/
 *.ply
+wandb/
+learning3d/
 
 # C extensions
 *.so
