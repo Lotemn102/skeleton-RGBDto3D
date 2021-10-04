@@ -1,9 +1,0 @@
-checkpoints/
-data/
-data_utils/__pycache__
-models/__pycache__
-ops/__pycache__
-utils/__pycache__
-losses/cuda/chamfer_distance/__pycache__
-losses/__pycache__
-utils/lib/__pycache__
