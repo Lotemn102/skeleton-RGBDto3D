@@ -49,7 +49,7 @@ from the same angles (`Front`, `Back`, `Side`), and recording from the vicon sen
   i've used the differences in the frames in order to "keep" only the corresponding frames from the vicon data. For example, if 
   the realsense frame numbers series is `1, 2, 4`, the corresponding frames to keep are `1, 5, 13`:
   <p align="center">
-  <img width="400" src="rgbd_to_3d/assets/images/sync.png">
+  <img width="500" src="rgbd_to_3d/assets/images/sync.png">
   </p>
 
   Validation of the synchronizing was done manually as well - After trimming each realsense video with the corresponding vicon 
