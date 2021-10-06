@@ -30,10 +30,16 @@ def test_one_epoch(device, model, test_loader, testset):
             torch.nn.functional.log_softmax(output, dim=1), target, size_average=False)
         label = int(testset.data_class.labels[i])
         prediction = torch.argmax(output[0]).item()
-        print("Ground Truth Label: ", label)
-        print("Predicted Label:    ", prediction)
-        print("------------------------------------------------------")
-        display_open3d(points.detach().cpu().numpy()[0])
+        # print("Ground Truth Label: ", label)
+        # print("Predicted Label:    ", prediction)
+        # print("------------------------------------------------------")
+
+        if label != prediction:
+            print("Ground Truth Label: ", label)
+            print("Predicted Label:    ", prediction)
+            print("------------------------------------------------------")
+
+        #display_open3d(points.detach().cpu().numpy()[0])
 
         test_loss += loss_val.item()
         count += output.size(0)

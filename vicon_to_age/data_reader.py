@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import open3d as o3d
 
-from rgbd_to_3d.data_cleaning.vicon_data_reader import VICONReader
+#from rgbd_to_3d.data_cleaning.vicon_data_reader import VICONReader
 
 def is_there_nan_coordinate(item):
     for coordinate in item:

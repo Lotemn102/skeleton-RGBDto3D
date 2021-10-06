@@ -15,6 +15,7 @@ data/
 *.ply
 wandb/
 learning3d/
+checkpoints/
 
 # C extensions
 *.so
