@@ -72,13 +72,15 @@ be placed a static object with some points on it, so the calibration process sho
 ```
 |--- rgbd_to_3d
   |---  assets
+  |--- papers
   |--- data_cleaning
   |--- models
-  |--- noy-mark-test
+  |--- noy_mark_test
   |--- unittests
 ```
 
-- `assets` folder contains emails I have had with Ron, Alon, Maayan and Omer during my work, and some images for this readme file.
+- `assets` folder contains template generator for the `frames_sync.json`, a template for the vicon csv file, a mapping of 
+the missing vicon points per recording, and the first frames of each recording that were detected manually (in `frames_sync.json`).
 - `data_cleaning` folder contain scripts for creating the dataset and projecting the vicon points:
   - `check_angles_accuracy_on_different_fps.py` was used to check the angles differences when using every 4th frame from the
   vicon or averaging every 4 frames.
@@ -102,7 +104,7 @@ be placed a static object with some points on it, so the calibration process sho
   - `vicon_data_reader.py` - used to read the csv vicon files and parse them into points.
   - `visualize_functions` - used to visualized the realsense and vicon data.
 - `models` folder contains summary i've written of the `OpenPose` architecture.
-- `noy-mark-test` folder contains scripts for running Noy & Mark's tool. This tool was supposed to find the T-pose in the frames
+- `noy_mark_test` folder contains scripts for running Noy & Mark's tool. This tool was supposed to find the T-pose in the frames
 but it didn't work for me. 
 - `unittests` folder contains unittests for the different scripts.
 
@@ -110,9 +112,15 @@ but it didn't work for me.
 
 
 ### How to re-produce my steps
-- **How to generate frames from a bag file**
-- **Where should I write the T-pose frames after manually detecting them**
-- **How to trim the data**
-- **How to validate trimming**
+- **How to generate frames from a bag file** - in the file `data_cleaning/generate_frames.py` use the function `aux_generate_realsense_frames` to
+create realsense frames, and the function `aux_generate_vicon_frames` to draw the vicon points on images. 
+- **Where should I write the T-pose frames after manually detecting them** - in the file `data_cleaning/assets/frames_sync.json`.
+- **How to trim the data** - After updating  `data_cleaning/assets/frames_sync.json` with the correct frames, call `trim_all`
+function in `trim_data.py`.
+- **How to validate trimming** - Run `data_cleaning/validate_trimming.py`.
+- **How to calculate Kabsch transformation** -  Call the function `kabsch` from `kabsch.py`.
 
+## vicon_to_age
 
+### Main steps were done
+- **Generated dataset** - 
