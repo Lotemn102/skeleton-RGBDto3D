@@ -1,5 +1,3 @@
-# Models Ideas
-
 ## OpenPose (Supervised, single-framed)
 ### Network Architecture
 

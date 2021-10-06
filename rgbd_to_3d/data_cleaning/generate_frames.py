@@ -1,5 +1,5 @@
 """
-List of function for manually synchronizing RealSense videos and Vicon points.
+List of functions for manually synchronizing RealSense videos and Vicon points.
 
 Pipeline
 =======

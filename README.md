@@ -70,14 +70,42 @@ be placed a static object with some points on it, so the calibration process sho
 
 ### Folder tree structure
 ```
-|---  assets
-    |--- emails
-|--- data_cleaning
-|--- data_quality_evaluation
-|--- models
-|--- noy-mark-test
-|--- unittests
+|--- rgbd_to_3d
+  |---  assets
+  |--- data_cleaning
+  |--- models
+  |--- noy-mark-test
+  |--- unittests
 ```
+
+- `assets` folder contains emails I have had with Ron, Alon, Maayan and Omer during my work, and some images for this readme file.
+- `data_cleaning` folder contain scripts for creating the dataset and projecting the vicon points:
+  - `check_angles_accuracy_on_different_fps.py` was used to check the angles differences when using every 4th frame from the
+  vicon or averaging every 4 frames.
+  - `cvat_data_reader.py` is used to read the `CVAT` json files. `CVAT` is a free online annotation tool. I used it to 
+  annotate the skeleton points on the rgb frames, so we will be able to construct 3d realsense points for each marker.
+  These 3d realsense points were later used in `Kabsch` algorithm in order to find the transformation between them and the
+  vicon points.
+  - `generate_frame.py` - was used to extract frames from the bag files, and draw the vicon points to rgb image. These frames
+  were later used to find the T-pose in each recording.
+  - `kabsch.py` - contains implementation for `Kabsch` algorithm.
+  - `missing_data.py` - used to get information about the amount of missing realsense frames (due to frame drop) and missing
+  vicon points.
+  - `projection.py` - script for extracting 3d realsense points from the annotated pixels, calculating `Kabsch` transformation
+  and projecting the points into the rgb frames.
+  - `realsense_data_reader` - is used to read bag files.
+  - `remove_depth_noise.py` - contains script for removing the depth background in a single image. It was not used yet, 
+  i was thinking to use it after converting the `OpenPose` input layer to get RGBD input (instead of RGB).
+  - `structs` - contains some structs for the data readers.
+  - `trim_data.py` - trim the realsense video and vicon data, based on the synchronized frames manually found beforehand.
+  - `validate_trimming.py` - visualize the realsense video and vicon points after trimming.
+  - `vicon_data_reader.py` - used to read the csv vicon files and parse them into points.
+  - `visualize_functions` - used to visualized the realsense and vicon data.
+- `models` folder contains summary i've written of the `OpenPose` architecture.
+- `noy-mark-test` folder contains scripts for running Noy & Mark's tool. This tool was supposed to find the T-pose in the frames
+but it didn't work for me. 
+- `unittests` folder contains unittests for the different scripts.
+
 
 
 
