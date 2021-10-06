@@ -59,7 +59,7 @@ from the same angles (`Front`, `Back`, `Side`), and recording from the vicon sen
 - **Projecting the vicon points into the realsense pixels** - `OpenPose` gets as input RGB image, and outputs N pixels, 
 in which the keypoints were detected. We have decided to use `OpenPose` as a basic network. Therefore, we had to project 
 the vicon points into the realsense frames. The projection is not trivial since these are 2 different coordinates systems.
-We have used `Kabsch` algorithm in order to find the transformation between the 2 coordinate systems. After applying this transformation
+I have used `Kabsch` algorithm in order to find the transformation between the 2 coordinate systems. After applying this transformation
 on the vicon points, they were projected into the rgb frames using the realsense intrinsic parameters (written in the bag file).
 There was error of ~60mm in the projection. More work is needed on this step, right now the work
 focuses on finding frames were the object is standing still, to improve the calibration. In future recordings there will
