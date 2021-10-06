@@ -15,6 +15,13 @@ from realsense_data_reader import RealSenseReader
 
 
 def generate_max_missing_points_vicon(csv_path: str, filename: str):
+    """
+    Generate graph showing for each vicon file, what is the maximum number of following frames with missing data.
+
+    :param csv_path: Path to the csv file.
+    :param filename: The csv file name, for graph title.
+    :return: None.
+    """
     vicon_reader = VICONReader(vicon_file_path=csv_path)
     vicon_points = vicon_reader.get_points()  # Dictionary of <frame_id, List<Point>>
 
@@ -48,6 +55,13 @@ def generate_max_missing_points_vicon(csv_path: str, filename: str):
     plt.close()
 
 def generate_max_missing_frames_realsense(bag_path: str, filename: str):
+    """
+    Generate graph showing for each bag file, what is the maximum number of following frames with missing data.
+
+    :param bag_path: Path to the bag file.
+    :param filename: The bag file name, for graph title.
+    :return: None.
+    """
     realsense_reader = RealSenseReader(bag_file_path=bag_path, type='RGB', frame_rate=30)
     pipeline = realsense_reader.setup_pipeline()
     cv2.namedWindow("RGB Stream", cv2.WINDOW_AUTOSIZE)
@@ -81,6 +95,11 @@ def generate_max_missing_frames_realsense(bag_path: str, filename: str):
     plt.close()
 
 def aux_missing_vicon():
+    """
+    Generate graphs for maximum missing following frames in vicon for all sessions.
+
+    :return: None.
+    """
     for root, dirs, files in os.walk("D:\\Movement Sense Research\\Vicon Validation Study"):
         for file in files:
             if file.endswith(".csv"):
@@ -90,6 +109,11 @@ def aux_missing_vicon():
                     generate_max_missing_points_vicon(root + "\\" + file, file)
 
 def aux_missing_realsense():
+    """
+    Generate graphs for maximum missing following frames in realsense for all sessions.
+
+    :return: None.
+    """
     for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study"):
         for file in files:
             if file.endswith(".bag"):

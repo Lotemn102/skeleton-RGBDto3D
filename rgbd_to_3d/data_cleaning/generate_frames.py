@@ -25,6 +25,15 @@ from vicon_data_reader import VICONReader
 For manually detecting the T-pose frames.
 """
 def generate_realsense_frames_rgb_and_depth(bag_path: str, bag_shoot_angle: str, sub_name: str, sub_position: str):
+    """
+    Generate frames from a bug files.
+
+    :param bag_path: Path to the bag file.
+    :param bag_shoot_angle: 'Front', 'Back' or 'Side'.
+    :param sub_name: For example, 'Sub005'.
+    :param sub_position: 'Stand', 'Squat', 'Left', 'Right' or 'Tight'.
+    :return: None.
+    """
     try:
         REALSENSE_FPS = 30
         pipeline = rs.pipeline()
@@ -141,6 +150,12 @@ def generate_realsense_frames_rgb_and_depth(bag_path: str, bag_shoot_angle: str,
     json_file_depth.close()
 
 def generate_vicon_frames(csv_path: str):
+    """
+    Draw the vicon points on images, and save them.
+
+    :param csv_path: Path to the vicon csv file.
+    :return: None.
+    """
     print(csv_path)
 
     vicon_reader = VICONReader(vicon_file_path=csv_path)
@@ -187,7 +202,7 @@ def generate_vicon_frames(csv_path: str):
             # Scale the coordinates so they will fit the image.
             x = x / 4.5
             z = z / 4.5
-            # Draw the point on the blank image (orthographic projection).
+            # Draw the point on the blank image (no projection, just ignoring the depth axis).
             vicon_image = cv2.circle(vicon_image, ((int(z) + 50), (int(x) + 250)), radius=0, color=(0, 0, 255),
                                      thickness=10)  # Coordinates offsets are manually selected to center the object.
 
@@ -255,6 +270,11 @@ def aux_generate_realsense_frames():
                                           bag_shoot_angle=shooting_angle, sub_position=subject_position)
 
 def aux_generate_vicon_frames():
+    """
+    Read all csv files and generate their frames.
+
+    :return: None.
+    """
     for root, dirs, files in os.walk("/media/lotemn/Transcend/Movement Sense Research/Vicon Validation Study/"):
         for file in files:
             if file.endswith(".csv"):

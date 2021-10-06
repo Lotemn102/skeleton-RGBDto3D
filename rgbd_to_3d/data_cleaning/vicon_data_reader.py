@@ -1,3 +1,7 @@
+"""
+Reader for the vicon data. See usage example in the bottom of this file.
+"""
+
 import pandas as pd
 import json
 

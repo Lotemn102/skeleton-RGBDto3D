@@ -20,6 +20,17 @@ from data_cleaning.structs import Point
 def sync_30_fps(bag_shoot_angle: str, sub_name: str, sub_position: str,
                 first_frame_number_realsense: int,
                 first_frame_number_vicon: int) -> (List[int], List[int], Dict):
+    """
+    Find the frames numbers that need to be saved from the realsense video and the vicon data. This function handles the
+    realsense frame drop, and the fact the FPS of the realsense (30) is different than the vicon (120).
+
+    :param bag_shoot_angle: 'Front', 'Back', 'Side'
+    :param sub_name: For example, 'Sub005'.
+    :param sub_position: 'Stand','Squat', 'Left', 'Right', 'Tight'.
+    :param first_frame_number_realsense: As manually detected.
+    :param first_frame_number_vicon: As manually detected.
+    :return: The frames numbers that need to be saved from the realsense video and the vicon data
+    """
     # -------------------------------------------- Find realsense clean frames -----------------------------------------
     # Get to the folder of all frames.
     folder_path_realsense_rgb = '/media/lotemn/Other/project-data/frames/' + sub_name + '/RealSense/' + sub_position + '/' + bag_shoot_angle + '/'
@@ -327,6 +338,11 @@ def rotate_vicon_points_90_degrees_counterclockwise(rotation_axis: str, csv_path
     return final_points
 
 def trim_all():
+    """
+    Trim all videos according to the frames manually picked as first ones for each recording.
+
+    :return: None.
+    """
     f1 = open('assets/frames_sync.json')
     frames_sync = json.load(f1)
 

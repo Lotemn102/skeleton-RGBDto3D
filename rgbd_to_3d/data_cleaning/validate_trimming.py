@@ -1,5 +1,5 @@
 """
-Script for manually validating the trimming.
+Script for visualizing the recordings after trimming them, to manually validate the trimming.
 """
 
 import cv2
@@ -13,6 +13,11 @@ from data_cleaning.vicon_data_reader import VICONReader
 SUBJECT_NUMBER = 3
 
 def validate_equal_number_of_frames():
+    """
+    Make sure the all pair of realsense video and corresponding vicon recording has the same frame numbers.
+
+    :return: None.
+    """
     for i in range(SUBJECT_NUMBER, SUBJECT_NUMBER+1):
         subject_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
         for position in ['Stand', 'Squat', 'Tight', 'Left', 'Right']:
@@ -35,7 +40,6 @@ def validate_equal_number_of_frames():
                 f.close()
 
     print("Finished checking number of frames.")
-
 
 def visualize_all():
     for i in range(SUBJECT_NUMBER, SUBJECT_NUMBER+1):

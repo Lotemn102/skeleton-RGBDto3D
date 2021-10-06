@@ -42,7 +42,7 @@ def hist_equalizer_16_bit(depth_map, max_depth):
 
 def generate_frames_without_processing():
     """
-    Generate some depth frames as png, without any processing on them
+    Generate some depth frames as png, without any processing on them.
 
     :return: None.
     """
@@ -73,7 +73,7 @@ def generate_frames_without_processing():
 
 def generate_frames_with_depth_mask():
     """
-    Using threshold to remove the background + removing bad sampled pixels (mostly around the object).
+    Generate depth frames using threshold to remove the background + removing bad sampled pixels (mostly around the object).
 
     :return: None
     """
@@ -116,6 +116,11 @@ def generate_frames_with_depth_mask():
 
 
 def generate_frames_with_depth_mask_and_histogram_equalization():
+    """
+    Generate depth frames using threshold to remove the background + histogram equalization.
+
+    :return:
+    """
     IMAGE_PATH = '/media/lotemn/Other/project-data/trimmed/Sub013/Squat/Front/depth_frames/'
 
     images_indices = [6391, 6516, 7700, 7745]

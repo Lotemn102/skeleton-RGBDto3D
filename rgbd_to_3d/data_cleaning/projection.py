@@ -1,3 +1,19 @@
+"""
+Project vicon points into realsense pixels.
+
+Pipeline
+=======
+    1. Annotate points on the RGB image. This should be done manually with the CVAT annotation tool. Get the json file
+       of the annotations from CVAT.
+    2. For each points, re-construct it's 3d realsense x,y,z coordinates.
+    3. Calculate the transformation between the 3d realsense coordinates and the vicon coordinates using Kabsch.
+    4. After finding the transformation, apply it on the vicon points and then project them using realsense intrinsics
+       parameters.
+
+    Examples are found in the tests below (`test_no_improvements`, `test_with_improvements_1`, `test_with_improvements_2`,
+     `test_with_improvements_3`).
+"""
+
 import math
 import pyrealsense2 as rs
 import numpy as np
@@ -12,6 +28,8 @@ from data_cleaning.vicon_data_reader import VICONReader, KEYPOINTS_NAMES
 from data_cleaning.structs import Point
 
 '''
+This is implementation of creating ply file of the pointcloud of the scene. Was not used for the moment.
+
 def read_points_from_pc(bag_file_path):
     # Open bag file
     reader = RealSenseReader(bag_file_path=bag_file_path, type='DEPTH', frame_rate=30)
@@ -59,6 +77,16 @@ def read_points_from_pc(bag_file_path):
 
 def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_size=31, remove_noisy_depth_points=True,
                                   points_to_remove=None):
+    """
+    For each annotated point, calculate it's reconstructed 3d realsense x,y,z coordiante.
+
+    :param bag_file_path: Path to the bag file.
+    :param annotated_pixels_path: Path to json file with annotated points.
+    :param kernel_size: Size of the kernel used to average depth pixels.
+    :param remove_noisy_depth_points: Whether or not to remove depth points in the background of the object.
+    :param points_to_remove: List of specific points to remove, if we know they have high error rates.
+    :return: None.
+    """
     # Read annotated pixels
     # Load 2d points.
     cvat_reader = CVATReader(annotated_pixels_path)
@@ -139,12 +167,6 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_s
             continue
 
         points_3d[keypoint_name] = [x, y, z]  # Points are in meters!
-
-    # Rotate points. The axes system of the vicon points and realsense 3d points are different. I've decided to rotate
-    # them all according to the the open3d default axes system.
-    # rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=points_3d)
-    # rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
-    # points_3d = rotated_points
 
     # Init matrix with the data. Order of points is according to KEYPOINTS_NAMES.
     A = np.zeros((len(points_3d), 3))
@@ -269,7 +291,20 @@ def find_rotation_matrix(realsense_3d_points, vicon_3d_points, scale):
     s, ret_R, ret_t = kabsch(A=realsense_3d_points, B=vicon_3d_points, scale=scale)
     return s, ret_R, ret_t
 
+''''
+This is my implementation of the projection function, but i have decided to use realsense API implementation (`project_rs`)
+I'm leaving it just in case i would need to implement it in the future by myself for some reason...
 def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
+    """
+    Project vicon points to realsense pixels, after applying on them the transformation found with Kabsch.
+
+    :param vicon_3d_points: Vicon points.
+    :param scale: Scale factor produced by Kabsch.
+    :param rotation_matrix: Rotation matrix produced by Kabsch.
+    :param translation_vector: Translation vector produced by Kabsch.
+    :return: Projected 2d points.
+    """
+
     # Vicon 3d -> realsense 3d
     B = np.zeros((len(vicon_3d_points), 3))
 
@@ -305,8 +340,20 @@ def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
         projected[i] = [int(u), int(v)]
 
     return projected
+'''
 
 def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_file_path):
+    """
+    Project vicon points to realsense pixels, after applying on them the transformation found with Kabsch. Projecting is
+    done with realsense API.
+
+    :param vicon_3d_points: Vicon points.
+    :param scale: Scale factor produced by Kabsch.
+    :param rotation_matrix: Rotation matrix produced by Kabsch.
+    :param translation_vector: Translation vector produced by Kabsch.
+    :param bag_file_path: Bag file path.
+    :return: Projected 2d points.
+    """
     # Vicon 3d -> realsense 3d
     # Rotate points. The axes system of the vicon points and realsense 3d points are different. I've decided to rotate
     # them all according to the the open3d default axes system.
@@ -348,7 +395,7 @@ def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_
     # ------------------------------------------------------------------------------------------------------------------
 
     # Realsense 3d -> pixels
-    depth_intrin = get_depth_intrinsics(bag_file_path=bag_file_path, first_frame=5842)
+    depth_intrin = get_intrinsics(bag_file_path=bag_file_path, first_frame=5842)
     pixels = []
 
     for i, row in enumerate(target_matrix):
@@ -358,7 +405,14 @@ def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_
 
     return pixels
 
-def get_depth_intrinsics(bag_file_path, first_frame):
+def get_intrinsics(bag_file_path, first_frame):
+    """
+    Get intrinsics parameters of the camera.
+
+    :param bag_file_path: Path to the bag file.
+    :param first_frame: The frame where the object is doint T-pose.
+    :return: Camera intrinsics.
+    """
     reader = RealSenseReader(bag_file_path=bag_file_path, type='BOTH', frame_rate=30)
     pipe, config = reader.setup_pipeline()
     frames = pipe.wait_for_frames()
@@ -372,9 +426,9 @@ def get_depth_intrinsics(bag_file_path, first_frame):
 
     # Get aligned frames
     aligned_depth_frame = aligned_frames.get_depth_frame()
-    depth_intrin = aligned_depth_frame.profile.as_video_stream_profile().intrinsics
+    intrin = aligned_depth_frame.profile.as_video_stream_profile().intrinsics
 
-    return depth_intrin
+    return intrin
 
 def rotate_vicon_points_90_degrees_counterclockwise(rotation_axis: str,  points):
     vicon_points = points
@@ -552,6 +606,11 @@ def calc_euclidean_dist(vicon_csv_path, points_deprojected, clean_points_names, 
     return distance_dict, average_distance
 
 def find_best_kernel_size():
+    """
+    Check several kernel sizes to decide which one is best for averaging depth pixels.
+
+    :return: None.
+    """
     # Some consts.
     bag_path = '../../data/Sub007_Left_Front.bag'
     annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
@@ -597,6 +656,11 @@ def find_best_kernel_size():
     print("Best kernel is {kernel}, with error of {error}".format(kernel=min_kernel, error=min_error))
 
 def test_no_improvements():
+    """
+    Project vicon points into the realsense pixels. No improvements on the data.
+
+    :return: None.
+    """
     # Some consts.
     bag_path = '../../data/Sub007_Left_Front.bag'
     annotated_pixels_path = '../../annotations_data/Sub007/Front/annotations_all.json'
@@ -698,6 +762,8 @@ def test_no_improvements():
 
 def test_with_improvements_1():
     """
+    Project vicon points into the realsense pixels.
+
     Improvements:
        - Removing noisy depth points.
        - Averaging depth values over space (best kernel is 31).
@@ -803,6 +869,8 @@ def test_with_improvements_1():
 
 def test_with_improvements_2():
     """
+    Project vicon points into the realsense pixels.
+
     Improvements:
        - Removing noisy depth points.
        - Averaging depth values over space (best kernel is 31).
@@ -966,6 +1034,8 @@ def test_with_improvements_2():
 
 def test_with_improvements_3(average_frames=5):
     """
+    Project vicon points into the realsense pixels.
+
     Improvements:
        - Removing noisy depth points.
        - Averaging depth values over space (best kernel is 31).

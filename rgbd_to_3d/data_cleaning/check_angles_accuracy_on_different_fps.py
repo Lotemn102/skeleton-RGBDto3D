@@ -1,5 +1,6 @@
 """
-Check if we can use the vicon data in 30 FPS instead of 120 FPS.
+Script for checking if we can use the vicon data in 30 FPS instead of 120 FPS, and how to do the frame drop. The 2 options
+are taking 4th frame and averaging every 4 frames.
 """
 import math
 import time
@@ -17,7 +18,16 @@ from data_cleaning.vicon_data_reader import VICONReader
 from data_cleaning.trim_data import rotate_vicon_points_90_degrees_counterclockwise
 
 
-def calc_angle(p1: Point, p2: Point, p3: Point) -> float: # p1 is RFHD, pt2 is C7, p3 is RSHO
+def calc_angle(p1: Point, p2: Point, p3: Point) -> float:
+    """
+    Calculate the angle between 3 points.
+
+    :param p1: RFHD
+    :param p2: C7
+    :param p3: RSHO
+    :return: The angle between the points.
+    """
+
     # point2-point1
     vector1 = np.asarray([p2.x-p1.x, p2.y-p1.y, p2.z-p1.z])
 
@@ -238,6 +248,14 @@ def calc_average_angle_per_second_low_pass_filter(vicon_csv_path: str) -> (List,
     return average_angle_per_second_30, average_angle_per_second_120
 
 def visualize_angle(vicon_csv_path: str, average_angle_per_second_120: List, average_angle_per_second_30: List):
+    """
+    Draw the points the angle was calculated on.
+
+    :param vicon_csv_path: Path to csv file with vicon points.
+    :param average_angle_per_second_120: Angle calculated using FPS of 120.
+    :param average_angle_per_second_30: Angle calculated using FPS of 30.
+    :return: None
+    """
     RFHD_index = 1
     C7_index = 4
     RSHO_index = 16
@@ -368,6 +386,16 @@ def visualize_angle(vicon_csv_path: str, average_angle_per_second_120: List, ave
 
 def plot(average_angle_per_second_120: List, average_angle_per_second_30_downsampled: List,
          average_angle_per_second_30_low_pass: List, position: str, sub_name: str):
+    """
+    Create a graph with the angles for each FPS tested.
+
+    :param average_angle_per_second_120: Average angle based on 120 FPS.
+    :param average_angle_per_second_30_downsampled: Average angle based on 30 FPS, when taking only the 4th frame.
+    :param average_angle_per_second_30_low_pass: Average angle based on 30 FPS, when averaging every 4 frames.
+    :param position: 'Front', 'Back', 'Side'.
+    :param sub_name: For example, 'Sub005'.
+    :return:
+    """
     # Create average angle plot
     x = list(range(1, len(average_angle_per_second_30_downsampled)+1))
     sns.set_style("darkgrid")
@@ -413,6 +441,12 @@ def plot(average_angle_per_second_120: List, average_angle_per_second_30_downsam
     return (max_diff, mean_diff)
 
 def generate_plots_for_all():
+    """
+    Generate graphs showing the difference in accuracy between the 2 options of frame-dropping: taking 4th frame and
+    averaging every 4 frames.
+
+    :return: None.
+    """
     max_diff_list = []
     mean_diff_list = []
 
@@ -505,9 +539,5 @@ def generate_plots_for_all():
 
 if __name__ == "__main__":
     vicon_csv_path = '../../Data/Sub004 Left.csv'
-    #average_angle_per_second_30, average_angle_per_second_120 = calc_average_angle_per_second(vicon_csv_path)
-
-    #visualize(vicon_csv_path=vicon_csv_path, average_angle_per_second_120=average_angle_per_second_120,
-    #          average_angle_per_second_30=average_angle_per_second_30)
     generate_plots_for_all()
 

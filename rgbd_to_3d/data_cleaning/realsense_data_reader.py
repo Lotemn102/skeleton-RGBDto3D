@@ -1,3 +1,7 @@
+"""
+Read bag file. See usage examples in the comment in the bottom of this file.
+"""
+
 import pyrealsense2 as rs
 
 
