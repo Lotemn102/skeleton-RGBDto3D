@@ -51,7 +51,7 @@ def read(remove_nans=True):
                     x_train_nans_indices.append(i)
                     break
 
-        print("Percentage of removed train frames with at least 1 nan value: {num}".format(num=(counter / x_train.shape[0])))
+        print("Percentage of removed train frames with at least 1 nan value: {num}%".format(num=round(100*(counter / x_train.shape[0]), 3)))
 
         counter = 0
 
@@ -62,7 +62,7 @@ def read(remove_nans=True):
                     x_test_nans_indices.append(i)
                     break
 
-        print("Percentage of removed test frames with at least 1 nan value: {num}".format(num=(counter / x_test.shape[0])))
+        print("Percentage of removed test frames with at least 1 nan value: {num}%".format(num=round(100*(counter / x_test.shape[0]), 3)))
 
         clean_x_train = np.zeros((x_train.shape[0]-len(x_train_nans_indices), 39, 3))
         clean_y_train = np.zeros((x_train.shape[0]-len(x_train_nans_indices), 1))
@@ -100,11 +100,15 @@ def read(remove_nans=True):
 def print_metadata():
     x_train, x_test, y_train, y_test = read(remove_nans=True)
     total = len(y_train)+len(y_test)
+    total_train = len(y_train)
+    total_test = len(y_test)
     print("Total objects: {n}".format(n=total))
-    print("Train objects: {n}".format(n=len(y_train)))
-    print("Test objects: {n}".format(n=len(y_test)))
-    print("Percentage of objects of age 'old': {n}%".format(n=round(100*(len(np.where(y_train == 1)[0]) + len(np.where(y_test == 1)[0]))/total, 2)))
-    print("Percentage of objects of age 'young': {n}%".format(n=round(100*(len(np.where(y_train == 0)[0]) + len(np.where(y_test == 0)[0]))/total, 2)))
+    print("Train objects: {n}".format(n=total_train))
+    print("Test objects: {n}".format(n=total_test))
+    print("Percentage of objects of age 'old' in train: {n}%".format(n=round(100*(len(np.where(y_train == 1)[0])/ total_train), 3)))
+    print("Percentage of objects of age 'old' in test: {n}%".format(n=round(100*(len(np.where(y_test == 1)[0]) / total_test), 3)))
+    print("Percentage of objects of age 'young' in train: {n}%".format(n=round(100*(len(np.where(y_train == 0)[0])/ total_train), 3)))
+    print("Percentage of objects of age 'young' in test: {n}%".format(n=round(100*(len(np.where(y_test == 0)[0])/ total_test), 3)))
     print("All ages: {n}".format(n=sorted(set(np.unique(np.concatenate((y_train, y_test)))))))
 
 def draw_some_examples(type='both'): # 'both', 'old', 'young'

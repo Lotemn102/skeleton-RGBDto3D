@@ -139,9 +139,6 @@ def main():
         # Watch losses
         wandb.log({"train loss": train_loss, "test loss": test_loss, "train accuracy": train_accuracy,
                    "test accuracy": test_accuracy})
-        # wandb.log({"test loss": test_loss})
-        # wandb.log({"train accuracy": train_accuracy})
-        # wandb.log({"test accuracy": test_accuracy})
 
         if test_loss < best_test_loss:
             best_test_loss = test_loss
@@ -151,15 +148,8 @@ def main():
                     'min_loss': best_test_loss,
                     'optimizer': optimizer.state_dict(), }
             torch.save(snap, 'checkpoints/{run_name}.pth.tar'.format(run_name=config.RUN_NAME))
-            #torch.save(model.state_dict(), 'checkpoints/%s/models/best_model.t7' % (EXP_NAME))
-            #torch.save(model.feature_model.state_dict(), 'checkpoints/%s/models/best_ptnet_model.t7' % (EXP_NAME))
+            print('Checkpoint saved.')
 
-        # torch.save(snap, 'checkpoints/%s/models/model_snap.t7' % (EXP_NAME))
-        # torch.save(model.state_dict(), 'checkpoints/%s/models/model.t7' % (EXP_NAME))
-        # torch.save(model.feature_model.state_dict(), 'checkpoints/%s/models/ptnet_model.t7' % (EXP_NAME))
-
-        # torch.save(model, 'checkpoints/{run_name}.pth.tar'.format(run_name=config.RUN_NAME))
-        print('Checkpoint saved.')
         print('EPOCH:: %d, Training Loss: %f, Testing Loss: %f, Best Loss: %f' % (epoch + 1, train_loss, test_loss, best_test_loss))
         print('EPOCH:: %d, Training Accuracy: %f, Testing Accuracy: %f' % (epoch + 1, train_accuracy, test_accuracy))
 

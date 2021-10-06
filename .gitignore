@@ -16,6 +16,7 @@ data/
 wandb/
 learning3d/
 checkpoints/
+cvat_users.txt
 
 # C extensions
 *.so

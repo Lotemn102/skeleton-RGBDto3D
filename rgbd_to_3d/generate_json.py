@@ -52,22 +52,3 @@ def generate_frames_json():
         json_file.write(json_data)
         json_file.close()
 
-def generate_vicon_rotation_json():
-        save_path = 'vicon_rotation.json'
-        all_data = []
-
-        for i in range(1, 21):
-                sub_name = 'Sub00' + str(i) if i < 10 else 'Sub0' + str(i)
-
-                data = {
-                        'sub_name': sub_name,
-                        'rotation' : 'N/A'
-                }
-
-                all_data.append(data)
-
-        json_data = json.dumps(all_data)
-        json_file = open(save_path, "w")
-        json_file.write(json_data)
-        json_file.close()
-
