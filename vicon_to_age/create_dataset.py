@@ -123,6 +123,11 @@ def create_splitted_dataset():
                         print("Wrong subject number.")
                         return
 
+    # TODO: Just for now! Remove every N frames, to increase data variance.
+    N = 120
+    train = [e for i, e in enumerate(train) if i % N == 0]
+    test = [e for i, e in enumerate(test) if i % N == 0]
+
     # Shuffle
     random.shuffle(train)
     random.shuffle(test)

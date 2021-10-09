@@ -34,7 +34,7 @@ from the same angles (`Front`, `Back`, `Side`), and recording from the vicon sen
   recording.
   - There are no timestamps in the vicon csv data.
 
-  In order to solve this problems, the following steps were done:
+  In order to solve these problems, the following steps were done:
   - At the beginning of each recording, the subject is asked to perform T-pose, i.e raise its hands to create the shape of T.
   This shape was used to decide which frame is the first frame in each recording. I first tried to use `OpenPose` to 
   extract the frame with the T-pose. The accuracy of the `Front` and `Back` positions was OK, but on the `Side` position 

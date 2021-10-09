@@ -1,6 +1,6 @@
 import torch
 
-RUN_NAME = "run_04"
+RUN_NAME = "run_06"
 BATCH_SIZE = 32
 NUM_WORKERS = 2
 DEVICE = 'cpu' if torch.cuda.is_available() else 'cpu'
