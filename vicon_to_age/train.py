@@ -26,6 +26,9 @@ def test_one_epoch(device, model, test_loader):
         target = target.to(device)
 
         output = model(points)
+
+        # According to https://discuss.pytorch.org/t/multi-class-cross-entropy-loss-and-softmax-in-pytorch/24920/2
+        # applying log_softmax and then nll_loss is basically using cross entropy loss.
         loss_val = torch.nn.functional.nll_loss(
             torch.nn.functional.log_softmax(output, dim=1), target, size_average=False)
 
@@ -54,8 +57,11 @@ def train_one_epoch(device, model, train_loader, optimizer):
         target = target.to(device)
 
         output = model(points)
-        loss_val = torch.nn.functional.nll_loss(
-            torch.nn.functional.log_softmax(output, dim=1), target, size_average=False)
+
+        # According to https://discuss.pytorch.org/t/multi-class-cross-entropy-loss-and-softmax-in-pytorch/24920/2
+        # applying log_softmax and then nnl_loss is basically using cross entropy loss.
+        loss_val = torch.nn.functional.nll_loss(torch.nn.functional.log_softmax(output, dim=1), target, size_average=False,
+                                                weight=torch.FloatTensor([0.2, 0.8])) # 80% of data is 'young' (0), 20% of data is 'old' (1).
 
         # forward + backward + optimize
         optimizer.zero_grad()
@@ -76,17 +82,19 @@ def train_one_epoch(device, model, train_loader, optimizer):
 
 
 def main():
-    # Init WANDB for metadata saving
-    wandb.init(project='skeleton-to-age', entity='lotemn102', name=config.RUN_NAME)
 
-    # Save the parameters to WANDB
-    wand_config = wandb.config
-    wand_config.learning_rate = config.LEARNING_RATE
-    wand_config.batch_size = config.BATCH_SIZE
-    wand_config.num_workers = config.NUM_WORKERS
-    wand_config.embedding_dims = config.EMBEDDING_DIMS
-    wand_config.optimizer = config.OPTIMIZER
-    wand_config.num_epochs = config.NUM_EPOCHS
+    if config.SAVE_WANDB:
+        # Init WANDB for metadata saving
+        wandb.init(project='skeleton-to-age', entity='lotemn102', name=config.RUN_NAME)
+
+        # Save the parameters to WANDB
+        wand_config = wandb.config
+        wand_config.learning_rate = config.LEARNING_RATE
+        wand_config.batch_size = config.BATCH_SIZE
+        wand_config.num_workers = config.NUM_WORKERS
+        wand_config.embedding_dims = config.EMBEDDING_DIMS
+        wand_config.optimizer = config.OPTIMIZER
+        wand_config.num_epochs = config.NUM_EPOCHS
 
     train_dict = {}
     test_dict = {}
@@ -110,7 +118,8 @@ def main():
     model.to(config.DEVICE)
 
     # Watch model
-    wandb.watch(model)
+    if config.SAVE_WANDB:
+        wandb.watch(model)
 
     checkpoint = None
 
@@ -136,9 +145,10 @@ def main():
         train_loss, train_accuracy = train_one_epoch(config.DEVICE, model, train_loader, optimizer)
         test_loss, test_accuracy = test_one_epoch(config.DEVICE, model, test_loader)
 
+        if config.SAVE_WANDB:
         # Watch losses
-        wandb.log({"train loss": train_loss, "test loss": test_loss, "train accuracy": train_accuracy,
-                   "test accuracy": test_accuracy})
+            wandb.log({"train loss": train_loss, "test loss": test_loss, "train accuracy": train_accuracy,
+                       "test accuracy": test_accuracy})
 
         if test_loss < best_test_loss:
             best_test_loss = test_loss

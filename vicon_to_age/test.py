@@ -18,6 +18,12 @@ def test_one_epoch(device, model, test_loader, testset):
     test_loss = 0.0
     pred  = 0.0
     count = 0
+
+    total_olds = 0
+    total_youngs = 0
+    counter_wrong_olds = 0
+    counter_wrong_youngs = 0
+
     for i, data in enumerate(test_loader):
         points, target = data
         target = target[:,0]
@@ -34,10 +40,14 @@ def test_one_epoch(device, model, test_loader, testset):
         # print("Predicted Label:    ", prediction)
         # print("------------------------------------------------------")
 
-        if label != prediction:
-            print("Ground Truth Label: ", label)
-            print("Predicted Label:    ", prediction)
-            print("------------------------------------------------------")
+        if label == 1: # old
+            total_olds += 1
+            if label != prediction:
+                counter_wrong_olds += 1
+        else: # young
+            total_youngs += 1
+            if label != prediction:
+                counter_wrong_youngs += 1
 
         #display_open3d(points.detach().cpu().numpy()[0])
 
@@ -48,6 +58,9 @@ def test_one_epoch(device, model, test_loader, testset):
         ag = (pred1 == target)
         am = ag.sum()
         pred += am.item()
+
+    print("Wrong old percentage is {n}%".format(n=100*round((counter_wrong_olds / total_olds), 2)))
+    print("Wrong young percentage is {n}%".format(n=100*round((counter_wrong_youngs / total_youngs), 2)))
 
     test_loss = float(test_loss)/count
     accuracy = float(pred)/count

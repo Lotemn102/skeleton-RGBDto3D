@@ -18,6 +18,7 @@ learning3d/
 checkpoints/
 cvat_users.txt
 !sync.png
+ideas.txt
 
 # C extensions
 *.so

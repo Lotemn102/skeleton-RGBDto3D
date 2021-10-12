@@ -23,7 +23,7 @@ def is_there_nan_coordinate(item):
 
 
 def read(remove_nans=True):
-    DATA_PATH = '../../data_3d_to_age/splitted_120/'
+    DATA_PATH = '../../data_3d_to_age/splitted/'
 
     for file in glob.glob(DATA_PATH + '*.npy'):
         if 'x_train' in file:

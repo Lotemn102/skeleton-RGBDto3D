@@ -1,7 +1,7 @@
 """
 Copy all csv files from the disk-on-key. Data is raw, no modifications were added / no frames were trimmed.
 """
-
+import math
 import os
 from shutil import copyfile
 import pandas as pd
@@ -10,6 +10,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 import random
 import json
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from rgbd_to_3d.data_cleaning.vicon_data_reader import VICONReader
 
@@ -46,6 +48,133 @@ def copy_csv_files():
                 copyfile(root + '/' + file, path + '/' + save_file)
                 print("Saved {file}.".format(file=save_file))
 
+def calculate_dataset_diversity(dataset):
+    """
+    Calculate how diverse a dataset is. "Diverse" is defined to be the average euclidean distance between consecutive
+    frames. High diversity = large average euclidean distance = good dataset!
+
+    :param dataset: List of all frames. Each frame is a tuple of [39_points_matrix, age, recording_file_name].
+            frames are already sorted by recording_file_name, since i have not shuffled the dataset yet.
+    :return: Diversity measurement (in mm).
+    """
+
+    average_distances = []
+
+    for sample_index in range(len(dataset)-1):
+        current_sample = dataset[sample_index]
+        next_sample = dataset[sample_index + 1]
+
+        if current_sample[2] == next_sample[2]: # Make sure they were taken from the same video.
+            dists = []
+            current_points = current_sample[0]
+            next_points = next_sample[0]
+
+            # Calculate euclidean distance between the objects.
+            for point_index in range(39):
+
+                # Ignore nans. In the Vicon dataset, if points was bad sampled, all coordinates are nan, so it's OK to
+                # check only the `x` one.
+                if math.isnan(current_points[point_index][0]) or math.isnan(next_points[point_index][0]):
+                    continue
+
+                p1 = current_points[point_index]
+                p2 = next_points[point_index]
+                d = np.linalg.norm(p1 - p2) # In mm.
+                dists.append(d)
+
+            average_distance = np.mean(dists)
+            average_distances.append(average_distance)
+
+    diversity = np.nanmean(average_distances) # In mm.
+    return diversity
+
+def increase_dataset_variance(dataset, threshold):
+    """
+    For each frame, check if the average euclidean distance to the previous object (frame) in the dataset is smaller than
+    threshold. If it is - don't keep the object to the dataset. This is better than just "keeping" every Nth frame,
+    since by "keeping" every Nth frame we ignore the fact that in some parts of the video the object is standing still
+    and in other parts he is moving.
+
+    :param dataset: List of all frames. Each frame is a tuple of [39_points_matrix, age, recording_file_name].
+            frames are already sorted by recording_file_name, since i have not shuffled the dataset yet.
+    :param threshold: What is the minimum average distance between consecutive frames that is allowed.
+    :return: New dataset.
+    """
+    new_dataset = [dataset[0]] # Always add the first frame of the first file to the new dataset.
+
+    for sample_index in range(1, len(dataset)):
+        current_sample = dataset[sample_index]
+        last_sample_added_to_new_dataset = new_dataset[-1]
+
+        if current_sample[2] == last_sample_added_to_new_dataset[2]: # Make sure they were taken from the same video,
+            # if not, we can not compare them.
+            dists = []
+            current_points = current_sample[0]
+            last_added_points = last_sample_added_to_new_dataset[0]
+
+            # Calculate euclidean distance between the objects.
+            for point_index in range(39):
+                # Ignore nans. In the Vicon dataset, if points was bad sampled, all coordinates are nan, so it's OK to
+                # check only the `x` one.
+                if math.isnan(current_points[point_index][0]) or math.isnan(last_added_points[point_index][0]):
+                    continue
+
+                p1 = current_points[point_index]
+                p2 = last_added_points[point_index]
+                d = np.linalg.norm(p1 - p2)  # In mm.
+                dists.append(d)
+
+            average_distance = np.mean(dists)
+
+            if average_distance >= threshold:
+                new_dataset.append(current_sample)
+        else: # This means we have finished reading all frames from the file, and we need to move to the next file.
+            new_dataset.append(current_sample)
+
+    return new_dataset
+
+def plot_distances_between_frames_in_file(dataset, file_name, savefig_name):
+    """
+    Plot the distance between every consecutive frames in a "Squat" recording.
+
+    :param dataset:
+    :return:
+    """
+    average_dists = []
+
+    for sample_index in range(len(dataset)-1):
+        current_sample = dataset[sample_index]
+        next_sample = dataset[sample_index + 1]
+
+        if current_sample[2] == file_name and next_sample[2] == file_name: # Make sure they were taken from the same video.
+            dists = []
+            current_points = current_sample[0]
+            next_points = next_sample[0]
+
+            # Calculate euclidean distance between the objects.
+            for point_index in range(39):
+
+                # Ignore nans. In the Vicon dataset, if points was bad sampled, all coordinates are nan, so it's OK to
+                # check only the `x` one.
+                if math.isnan(current_points[point_index][0]) or math.isnan(next_points[point_index][0]):
+                    continue
+
+                p1 = current_points[point_index]
+                p2 = next_points[point_index]
+                d = np.linalg.norm(p1 - p2) # In mm.
+                dists.append(d)
+
+            average_dists.append(np.mean(dists))
+
+    sns.set_style("darkgrid")
+    plt.plot(range(len(average_dists)), average_dists)
+    plt.title("Average euclidean distance between objects in consecutive frames in {file}".format(file=file_name), fontsize=10)
+    plt.xlabel("Object index")
+    plt.ylabel("Euclidean distance (mm)")
+    plt.savefig(savefig_name + '.png')
+    plt.close()
+
+
 def create_splitted_dataset():
     DATA_PATH = '../../data_3d_to_age/'
 
@@ -76,6 +205,8 @@ def create_splitted_dataset():
     train = [] # <matrix of shape (N, 39, 3), age> N is the size of the training set
     test = [] # <matrix of shape (n, 39, 3), age> n is the size of the testing set
 
+    counter = 0
+
     # Read pointclouds.
     for root, dirs, files in os.walk(DATA_PATH):
         for file in files:
@@ -87,7 +218,12 @@ def create_splitted_dataset():
                 if file == 'Subjects Ages.csv':
                     continue
 
+                if counter > 40:
+                    break
+
                 print("Adding points from {file}".format(file=file))
+
+                counter += 1
 
                 remove_extension = file[:-4]
                 splitted = remove_extension.split('_')
@@ -112,7 +248,7 @@ def create_splitted_dataset():
                         point_as_matrix[i][1] = p.y
                         point_as_matrix[i][2] = p.z
 
-                    pair = (point_as_matrix, age)
+                    pair = (point_as_matrix, age, file)
 
                     # Add to all data
                     if subject_num in train_subject_numbers:
@@ -123,10 +259,33 @@ def create_splitted_dataset():
                         print("Wrong subject number.")
                         return
 
-    # TODO: Just for now! Remove every N frames, to increase data variance.
-    N = 120
-    train = [e for i, e in enumerate(train) if i % N == 0]
-    test = [e for i, e in enumerate(test) if i % N == 0]
+    FILE_NAME = 'Sub007 Squat.csv'
+    # Calculate how diverse the dataset is.
+    train_diversity = calculate_dataset_diversity(train)
+    print("Train size, with out removing frames, is {s}".format(s=len(train)))
+    print("Train diversity, with out removing frames, is {d}".format(d=train_diversity))
+    print("--------------------------------------------------------")
+    plot_distances_between_frames_in_file(train, FILE_NAME, "without_removing")
+
+    # ------------------ Just for testing! Remove every N frames, to increase data variance. ---------------------------
+    N = 60
+    train_1 = [e for i, e in enumerate(train) if i % N == 0]
+    train_diversity = calculate_dataset_diversity(train_1)
+    print("Train size, after saving every Nth frame, is {s}".format(s=len(train_1)))
+    print("Train diversity, after saving every Nth frame, is {d}".format(d=train_diversity))
+    print("--------------------------------------------------------")
+    plot_distances_between_frames_in_file(train_1, FILE_NAME, "remove_60")
+    # ------------------------------------------------------------------------------------------------------------------
+
+    # Increase dataset variance.
+    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES = 80 # In mm
+    train = increase_dataset_variance(dataset=train, threshold=MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES)
+    test = increase_dataset_variance(dataset=test, threshold=MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES)
+    train_diversity = calculate_dataset_diversity(train)
+    print("Train size, after saving only diverse frames, is {s}".format(s=len(train)))
+    print("Train diversity, after saving only diverse frames, is {d}".format(d=train_diversity))
+    print("--------------------------------------------------------")
+    plot_distances_between_frames_in_file(train, FILE_NAME, "diverse_frames")
 
     # Shuffle
     random.shuffle(train)
@@ -139,10 +298,10 @@ def create_splitted_dataset():
     y_test = [e[1] for e in test]
 
     # Save to npy files
-    np.save('../../data_3d_to_age/splitted/x_train.npy', x_train, allow_pickle=True)
-    np.save('../../data_3d_to_age/splitted/x_test.npy', x_test, allow_pickle=True)
-    np.save('../../data_3d_to_age/splitted/y_train.npy', y_train, allow_pickle=True)
-    np.save('../../data_3d_to_age/splitted/y_test.npy', y_test, allow_pickle=True)
+    # np.save('../../data_3d_to_age/splitted/x_train.npy', x_train, allow_pickle=True)
+    # np.save('../../data_3d_to_age/splitted/x_test.npy', x_test, allow_pickle=True)
+    # np.save('../../data_3d_to_age/splitted/y_train.npy', y_train, allow_pickle=True)
+    # np.save('../../data_3d_to_age/splitted/y_test.npy', y_test, allow_pickle=True)
 
 
 if __name__ == "__main__":
