@@ -8,8 +8,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 import open3d as o3d
 import cv2
+from matplotlib.ticker import MaxNLocator
 
 from rgbd_to_3d.data_cleaning.vicon_data_reader import VICONReader, KEYPOINTS_NAMES
+
+SUBJECT_AGES = [24, 26, 27, 27, 27, 25, 27, 30, 23, 27, 26, 27, 23, 26, 26, 27, 85, 72, 77, 72, 66, 74, 67]
 
 def visualize(data, file_name, age):
     vid_capture = cv2.VideoCapture(0, cv2.CAP_DSHOW)
@@ -79,19 +82,21 @@ def plot_center_of_mass_diff(data):
 
         points_files_map[file_name].append(p)
 
-    a_x = []
-    a_y = []
-    b_x = []
-    b_y = []
-    c_x = []
-    c_y = []
-    d_x = []
-    d_y = []
+    x = []
+    y = []
+
+    for i in range(4, 22):
+        x.append([])
+        y.append([])
 
     sns.set_style("darkgrid")
-    plt.title("Difference in center of mass every 0.3 seconds")
+    color_list = ['blue', 'black', 'olive', 'chocolate', 'm', 'gold', 'c', 'red', 'darkblue', 'orange', 'pink',
+                  'crimson', 'lime', 'gray', 'purple', 'g', 'saddlebrown', 'deepskyblue']
+    colors = plt.cycler('color', color_list)
+    plt.rc('axes', prop_cycle=colors)
+    plt.title("Difference in center of mass from first frame")
     plt.xlabel("frame number")
-    plt.ylabel("difference every 0.3 seconds in center of mass (in mm)")
+    plt.ylabel("difference (in mm)")
 
     # For each file, plot center of mass diff.
     for j, (k, v) in enumerate(points_files_map.items()): # v is (N, 39, 3), N is the number of frames in this file
@@ -103,199 +108,58 @@ def plot_center_of_mass_diff(data):
             center_of_mass = find_center_of_mass(points[0])
             centroid_points_of_current_file.append(center_of_mass)
 
-        # x = []
-        # y = []
-        frames_gap = 36
+        frames_gap = 1
         length = len(centroid_points_of_current_file)
 
-        START = int(length / 3.5)
-        END = length - int(length / 4)
+        START = int(length / 3)
+        END = length - int(length / 3)
+        first_center_of_mass = centroid_points_of_current_file[START]
+        i = START + 1
 
-        if j == 1:
-            START = int(length / 3)
-            END = length - int(length / 4)
+        while math.isnan(first_center_of_mass[0]):
+            first_center_of_mass = centroid_points_of_current_file[i]
+            i = i + 1
 
-        for i in range(START, END, frames_gap):
-            if i <= frames_gap:
-                continue
-
+        for i in range(i, END, frames_gap):
             current_point = np.array(centroid_points_of_current_file[i])
-            previous_point = np.array(centroid_points_of_current_file[i - frames_gap])
-            dist = np.linalg.norm(current_point - previous_point)
-
-            if j == 0:
-                a_x.append(i)
-                a_y.append(dist)
-            elif j == 1:
-                b_x.append(i)
-                b_y.append(dist)
-            elif j == 2:
-                c_x.append(i)
-                c_y.append(dist)
-            elif j == 3:
-                d_x.append(i)
-                d_y.append(dist)
+            dist = np.linalg.norm(current_point - first_center_of_mass)
+            x[j].append(i)
+            y[j].append(dist)
 
     # Set all graph to start from origin
-    a_x = [e - min(a_x) for e in a_x]
-    b_x = [e - min(b_x) for e in b_x]
-    c_x = [e - min(c_x) for e in c_x]
-    d_x = [e - min(d_x) for e in d_x]
+    origin_x = []
 
-    plt.plot(a_x, a_y)
-    plt.plot(b_x, b_y)
-    plt.plot(c_x, c_y)
-    plt.plot(d_x, d_y)
-    plt.legend(["Sub006 (age 25)", "Sub009 (age 23)", "Sub018 (age 72)", "Sub019 (age 77)"])
+    for my_list in x:
+        my_list = [e - min(my_list) for e in my_list]
+        origin_x.append(my_list)
+
+    # First plot - all diffs per frame
+    for i, my_list in enumerate(origin_x):
+        plt.plot(my_list, y[i])
+        text = plt.text(my_list[-1], y[i][-1], f'{SUBJECT_AGES[i + 4]}')
+        text.set_color(plt.gca().lines[-1].get_color())
+
     plt.show()
+    plt.close()
 
+    # Second plot - average diff per age
+    means = []
+    sub_ages = []
 
+    for i, my_list in enumerate(origin_x):
+        mean = np.nanmean(y[i])
+        sub_age = SUBJECT_AGES[i + 4]
+        means.append(mean)
+        sub_ages.append(sub_age)
 
-def plot_RFIN_diff(data):
-    # Split points into files
-    points_files_map = {}
-
-    for i, p in enumerate(data):
-        file_name = p[2]
-
-        if file_name not in points_files_map.keys():
-            points_files_map[file_name] = []
-
-        points_files_map[file_name].append(p)
-
-    # For each file, plot center of mass diff.
-    for k, v in points_files_map.items(): # v is (N, 39, 3), N is the number of frames in this file
-        RFIN_points_of_current_file = []
-
-        for points in v: # points is (39, 3)
-            rfin_index = [i for i, e in enumerate(KEYPOINTS_NAMES) if e == 'RFIN'][0]
-            rfin = points[0][rfin_index]
-            RFIN_points_of_current_file.append(rfin)
-
-        x = []
-        y = []
-        frames_gap = 12
-        length = len(RFIN_points_of_current_file)
-
-        for i in range(0, length, frames_gap):
-            if i <= frames_gap:
-                continue
-
-            x.append(i)
-            current_point = np.array(RFIN_points_of_current_file[i])
-            previous_point = np.array(RFIN_points_of_current_file[i - frames_gap])
-            dist = np.linalg.norm(current_point - previous_point)
-            y.append(dist)
-
-        sns.set_style("darkgrid")
-        plt.title("Difference in RFIN every 0.1 seconds")
-        plt.xlabel("frame number")
-        plt.ylabel("difference every 0.1 seconds in RFIN (in mm)")
-        plt.plot(x, y)
-
-    plt.legend(["Sub006 (age 25)", "Sub009 (age 23)", "Sub018 (age 72)", "Sub019 (age 77)"])
+    ax = plt.figure().gca()
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+    sns.set_style("darkgrid")
+    plt.scatter(sub_ages, means)
+    plt.title("Average difference in center of mass per age")
+    plt.xlabel("age")
+    plt.ylabel("average difference (in mm)")
     plt.show()
-
-def plot_LFIN_diff(data):
-    # Split points into files
-    points_files_map = {}
-
-    for i, p in enumerate(data):
-        file_name = p[2]
-
-        if file_name not in points_files_map.keys():
-            points_files_map[file_name] = []
-
-        points_files_map[file_name].append(p)
-
-    # For each file, plot center of mass diff.
-    for k, v in points_files_map.items(): # v is (N, 39, 3), N is the number of frames in this file
-        LFIN_points_of_current_file = []
-
-        for points in v: # points is (39, 3)
-            lfin_index = [i for i, e in enumerate(KEYPOINTS_NAMES) if e == 'LFIN'][0]
-            lfin = points[0][lfin_index]
-            LFIN_points_of_current_file.append(lfin)
-
-        x = []
-        y = []
-        frames_gap = 12
-        length = len(LFIN_points_of_current_file)
-
-        for i in range(0, length, frames_gap):
-            if i <= frames_gap:
-                continue
-
-            x.append(i)
-            current_point = np.array(LFIN_points_of_current_file[i])
-            previous_point = np.array(LFIN_points_of_current_file[i - frames_gap])
-            dist = np.linalg.norm(current_point - previous_point)
-            y.append(dist)
-
-        sns.set_style("darkgrid")
-        plt.title("Difference in LFIN every 0.1 seconds")
-        plt.xlabel("frame number")
-        plt.ylabel("difference every 0.1 seconds in LFIN (in mm)")
-        plt.plot(x, y)
-
-    plt.legend(["Sub006 (age 25)", "Sub009 (age 23)", "Sub018 (age 72)", "Sub019 (age 77)"])
-    plt.show()
-
-def plot_all_diff(data):
-    # Split points into files
-    points_files_map = {}
-
-    for i, p in enumerate(data):
-        file_name = p[2]
-
-        if file_name not in points_files_map.keys():
-            points_files_map[file_name] = []
-
-        points_files_map[file_name].append(p)
-
-    # For each file, plot center of mass diff.
-    for k, v in points_files_map.items():  # v is (N, 39, 3), N is the number of frames in this file
-        points_of_current_file = []
-
-        for points in v:  # points is (39, 3)
-            points_of_current_file.append(points[0])
-
-        x = []
-        y = []
-        frames_gap = 60
-        length = len(points_of_current_file)
-
-        for i in range(0, length, frames_gap):
-            if i <= frames_gap:
-                continue
-
-            x.append(i)
-            current_point = np.array(points_of_current_file[i])
-            previous_point = np.array(points_of_current_file[i - frames_gap])
-
-            # Remove nans
-            mask1 = np.isnan(current_point)
-            mask2 = np.isnan(previous_point)
-            mask = ~(mask1 | mask2)
-            current_point = current_point[mask]
-            new_shape = (int(len(current_point) / 3), 3)
-            current_point = np.reshape(current_point, new_shape)
-            previous_point = previous_point[mask]
-            previous_point = np.reshape(previous_point, new_shape)
-
-            # Calc distance
-            dist = ((current_point - previous_point) ** 2).mean() ** 0.5
-            y.append(dist)
-
-        sns.set_style("darkgrid")
-        plt.title("Difference in all points every 0.5 seconds")
-        plt.xlabel("frame number")
-        plt.ylabel("difference every 0.5 seconds in all points (in mm)")
-        plt.plot(x, y)
-
-    plt.legend(["Sub006 (age 25)", "Sub009 (age 23)", "Sub018 (age 72)", "Sub019 (age 77)"])
-    plt.show()
-
 
 def find_center_of_mass(frame_points):
     """
@@ -422,6 +286,7 @@ def increase_dataset_variance(dataset, threshold):
     for sample_index in range(1, len(dataset)):
         current_sample = dataset[sample_index]
         last_sample_added_to_new_dataset = new_dataset[-1]
+        age = current_sample[1]
 
         if current_sample[2] == last_sample_added_to_new_dataset[2]: # Make sure they were taken from the same video,
             # if not, we can not compare them.
@@ -443,7 +308,9 @@ def increase_dataset_variance(dataset, threshold):
 
             average_distance = np.mean(dists)
 
-            if average_distance >= threshold:
+            t = threshold[0] if age <= 30 else threshold[1]
+
+            if average_distance >= t:
                 new_dataset.append(current_sample)
         else: # This means we have finished reading all frames from the file, and we need to move to the next file.
             new_dataset.append(current_sample)
@@ -461,12 +328,17 @@ def create_splitted_dataset():
     old_subjects_numbers = np.array(range(17, 22))
     young_subjects_numbers = np.array(range(1, 17))
 
-    old_train_subject_numbers = random.sample(list(old_subjects_numbers), int(len(old_subjects_numbers) * 0.8))
+    old_train_subject_numbers = random.sample(list(old_subjects_numbers), int(len(old_subjects_numbers) * 0.75))
     old_test_subject_numbers = list(set(old_subjects_numbers) - set(old_train_subject_numbers))
-    young_train_subject_numbers = random.sample(list(young_subjects_numbers), int(len(young_subjects_numbers) * 0.8))
+    young_train_subject_numbers = random.sample(list(young_subjects_numbers), int(len(young_subjects_numbers) * 0.75))
     young_test_subject_numbers = list(set(young_subjects_numbers) - set(young_train_subject_numbers))
     train_subject_numbers = old_train_subject_numbers + young_train_subject_numbers
     test_subjects_numbers = old_test_subject_numbers + young_test_subject_numbers
+
+    print("Train numbers: ")
+    print(train_subject_numbers)
+    print("Test numbers: ")
+    print(test_subjects_numbers)
 
     # Read all data.
     # Read ages.
@@ -485,19 +357,17 @@ def create_splitted_dataset():
 
         for file in files:
 
-            # points_of_current_file = []
-
             if file.endswith(".csv"):
 
                 if "Sub001" in root: # The recordings in Sub001 were different than the others, so i'm not using it.
                     continue
 
                 # ------------------------------------- Just for debugging ---------------------------------------------
-                if "Sub006" not in root and "Sub018" not in root and "Sub009" not in root and "Sub019" not in root:
-                    continue
-
-                if "Left" not in file:
-                    continue
+                # if "Sub006" not in root and "Sub018" not in root and "Sub009" not in root and "Sub019" not in root:
+                #     continue
+                #
+                # if "Left" not in file:
+                #     continue
                 # ------------------------------------------------------------------------------------------------------
 
                 if file == 'Subjects Ages.csv':
@@ -535,17 +405,12 @@ def create_splitted_dataset():
                     if subject_num in train_subject_numbers:
                         train.append(pair)
                     elif subject_num in test_subjects_numbers:
-                        # TODO: REMOVE THIS!
-                        #test.append(pair)
-                        train.append(pair)
+                        test.append(pair)
                     else:
                         print("Wrong subject number.")
                         return
 
-    plot_center_of_mass_diff(train)
-    # plot_RFIN_diff(train)
-    # plot_LFIN_diff(train)
-    # plot_all_diff(train)
+    #plot_center_of_mass_diff(train)
 
     # Calculate how diverse the dataset is.
     train_diversity = calculate_dataset_diversity(train)
@@ -563,10 +428,12 @@ def create_splitted_dataset():
     # ------------------------------------------------------------------------------------------------------------------
 
     # Increase dataset variance.
-    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES = 60 # In mm
-    train = increase_dataset_variance(dataset=train, threshold=MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES)
-    # TODO: REMOVE THIS!
-    #test = increase_dataset_variance(dataset=test, threshold=MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES)
+    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_OLD = 10 # In mm
+    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_YOUNG = 20 # In mm. Different threshold is used to increase number of samples of
+    # old people, since dataset is not balanced.
+    thresh = (MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_YOUNG, MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_OLD)
+    train = increase_dataset_variance(dataset=train, threshold=thresh)
+    test = increase_dataset_variance(dataset=test, threshold=thresh)
     train_diversity = calculate_dataset_diversity(train)
     print("Train size, after saving only diverse frames, is {s}".format(s=len(train)))
     print("Train diversity, after saving only diverse frames, is {d}".format(d=train_diversity))
@@ -578,11 +445,17 @@ def create_splitted_dataset():
     x_test = [e[0] for e in test]
     y_test = [e[1] for e in test]
 
+    subjects_train = [e[2] for e in train]
+    subjects_test = [e[2] for e in test]
+
+    print(subjects_train)
+    print(subjects_test)
+
     # Save to npy files
-    # np.save('../../data_angles_to_age/splitted/x_train.npy', x_train, allow_pickle=True)
-    # np.save('../../data_angles_to_age/splitted/x_test.npy', x_test, allow_pickle=True)
-    # np.save('../../data_angles_to_age/splitted/y_train.npy', y_train, allow_pickle=True)
-    # np.save('../../data_angles_to_age/splitted/y_test.npy', y_test, allow_pickle=True)
+    np.save('../../data_angles_to_age/splitted/x_train.npy', x_train, allow_pickle=True)
+    np.save('../../data_angles_to_age/splitted/x_test.npy', x_test, allow_pickle=True)
+    np.save('../../data_angles_to_age/splitted/y_train.npy', y_train, allow_pickle=True)
+    np.save('../../data_angles_to_age/splitted/y_test.npy', y_test, allow_pickle=True)
 
 
 if __name__ == "__main__":
