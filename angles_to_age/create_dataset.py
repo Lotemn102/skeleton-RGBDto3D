@@ -325,12 +325,12 @@ def create_splitted_dataset():
 
     # Decide which subjects will be used for training and which for testing (~80%-~20%), make sure there will be similar
     # percentage of old in training and testing and young in training and testing.
-    old_subjects_numbers = np.array(range(17, 22))
+    old_subjects_numbers = np.array(range(17, 24))
     young_subjects_numbers = np.array(range(1, 17))
 
-    old_train_subject_numbers = random.sample(list(old_subjects_numbers), int(len(old_subjects_numbers) * 0.75))
+    old_train_subject_numbers = random.sample(list(old_subjects_numbers), int(len(old_subjects_numbers) * 0.70))
     old_test_subject_numbers = list(set(old_subjects_numbers) - set(old_train_subject_numbers))
-    young_train_subject_numbers = random.sample(list(young_subjects_numbers), int(len(young_subjects_numbers) * 0.75))
+    young_train_subject_numbers = random.sample(list(young_subjects_numbers), int(len(young_subjects_numbers) * 0.70))
     young_test_subject_numbers = list(set(young_subjects_numbers) - set(young_train_subject_numbers))
     train_subject_numbers = old_train_subject_numbers + young_train_subject_numbers
     test_subjects_numbers = old_test_subject_numbers + young_test_subject_numbers
@@ -372,6 +372,10 @@ def create_splitted_dataset():
 
                 if file == 'Subjects Ages.csv':
                     continue
+
+                # # TODO: Remove this
+                # if 'Squat' in file:
+                #     continue
 
                 print("Adding points from {file}".format(file=file))
 
@@ -428,8 +432,8 @@ def create_splitted_dataset():
     # ------------------------------------------------------------------------------------------------------------------
 
     # Increase dataset variance.
-    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_OLD = 10 # In mm
-    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_YOUNG = 20 # In mm. Different threshold is used to increase number of samples of
+    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_OLD = 60 # In mm
+    MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_YOUNG = 90 # In mm. Different threshold is used to increase number of samples of
     # old people, since dataset is not balanced.
     thresh = (MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_YOUNG, MINIMUM_AVERAGE_DIST_BETWEEN_FRAMES_OLD)
     train = increase_dataset_variance(dataset=train, threshold=thresh)
@@ -441,15 +445,9 @@ def create_splitted_dataset():
 
     # Split to samples and labels.
     x_train = [e[0] for e in train]
-    y_train = [e[1] for e in train]
+    y_train = [(e[1], e[2]) for e in train]
     x_test = [e[0] for e in test]
-    y_test = [e[1] for e in test]
-
-    subjects_train = [e[2] for e in train]
-    subjects_test = [e[2] for e in test]
-
-    print(subjects_train)
-    print(subjects_test)
+    y_test = [(e[1], e[2]) for e in test]
 
     # Save to npy files
     np.save('../../data_angles_to_age/splitted/x_train.npy', x_train, allow_pickle=True)

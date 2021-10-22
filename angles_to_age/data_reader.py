@@ -157,8 +157,8 @@ def read():
 
 def print_metadata():
     x_train, x_test, y_train, y_test = read()
-    y_train = np.array(y_train)
-    y_test = np.array(y_test)
+    y_train = np.array([int(e[0]) for e in y_train])
+    y_test = np.array([int(e[0]) for e in y_test])
     total = len(y_train)+len(y_test)
     total_train = len(y_train)
     total_test = len(y_test)
