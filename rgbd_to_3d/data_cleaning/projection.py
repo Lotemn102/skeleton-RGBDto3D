@@ -342,7 +342,7 @@ def project(vicon_3d_points, scale, rotation_matrix, translation_vector):
     return projected
 '''
 
-def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_file_path):
+def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_file_path, first_frame=5842):
     """
     Project vicon points to realsense pixels, after applying on them the transformation found with Kabsch. Projecting is
     done with realsense API.
@@ -395,7 +395,7 @@ def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_
     # ------------------------------------------------------------------------------------------------------------------
 
     # Realsense 3d -> pixels
-    depth_intrin = get_intrinsics(bag_file_path=bag_file_path, first_frame=5842)
+    depth_intrin = get_intrinsics(bag_file_path=bag_file_path, first_frame=first_frame)
     pixels = []
 
     for i, row in enumerate(target_matrix):

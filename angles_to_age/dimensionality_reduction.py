@@ -6,6 +6,7 @@ from sklearn.manifold import Isomap, MDS, TSNE
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import pandas as pd
+from mpl_toolkits.mplot3d import Axes3D
 
 from angles_to_age.data_reader import read
 from angles_to_age.preprocess import normalize, to_binary, shuffle
@@ -25,19 +26,71 @@ def isomap(x, y):
     plt.show()
 
 
+def mds_eigenvals(x):
+    # x_ = [e for i, e in enumerate(x) if i %  == 0]
+    # x = np.array(x_)
+
+    # Use sklearn to generate the distances matrix
+    model = MDS(n_components=3, metric=True)
+    model.fit(x)
+    D_ = model.dissimilarity_matrix_
+
+    # Number of points
+    n = len(D_)
+
+    # Centering matrix
+    H = np.eye(n) - np.ones((n, n)) / n
+
+    # YY^T
+    B = -H.dot(D_ ** 2).dot(H) / 2
+
+    # Diagonalize
+    evals, evecs = np.linalg.eigh(B)
+
+    # Sort by eigenvalue in descending order
+    idx = np.argsort(evals)[::-1]
+    evals = evals[idx]
+    evecs = evecs[:, idx]
+
+    t = np.diag(evals)
+
+    # Compute the coordinates using positive-eigenvalued components only
+    w, = np.where(evals > 0)
+    L = np.diag(np.sqrt(evals[w]))
+    V = evecs[:, w]
+    Y = V.dot(L)
+
+    return L, Y
+
+
 def multidimensional_scaling(x, y, metric=True):
-    model = MDS(n_components=2, metric=metric)
+    x_ = [e for i, e in enumerate(x) if i % 10 == 0]
+    y_ = [e for i, e in enumerate(y) if i % 10 == 0]
+    x = np.array(x_)
+    y = np.array(y_)
+
+    model = MDS(n_components=3, metric=metric)
     proj = model.fit_transform(x)
     proj_df = pd.DataFrame(proj)
-    print("here")
 
     idx_1 = np.where(y == 1)
     idx_0 = np.where(y == 0)
 
-    plt.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
-    plt.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
+    # 2D Scatter
+    # plt.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
+    # plt.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
+
+    # 3D Scatter
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], proj_df.iloc[idx_1][2], s=10, c='b', marker="o", label='old')
+    # ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], proj_df.iloc[idx_0][2], s=10, c='r', marker="o", label='young')
+
     plt.legend()
     plt.show()
+
+    return proj
+
 
 def tsne(x, y):
     model = TSNE(n_components=2, learning_rate='auto')
@@ -141,8 +194,13 @@ if __name__ == "__main__":
                                          # visualization.
 
     # isomap(x, y)
-    # multidimensional_scaling(x, y)
+    # K = multidimensional_scaling(x, y)
     # tsne(x, y)
     # pca(x, y)
-    plot_all(x, y)
+    # plot_all(x, y)
     # train_vs_test_plots(x_train, x_test, y_train, y_test)
+    L, Y = mds_eigenvals(x)
+
+    v = 5
+    c = 6
+

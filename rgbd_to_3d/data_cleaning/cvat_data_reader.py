@@ -8,8 +8,9 @@ import json
 from data_cleaning.vicon_data_reader import KEYPOINTS_NAMES
 
 class CVATReader:
-    def __init__(self, json_path):
+    def __init__(self, json_path, is_calibration=False):
         self.path = json_path
+        self.calibration = is_calibration
 
         # Read data.
         f = open(self.path)
@@ -25,7 +26,12 @@ class CVATReader:
             points[label] = point
 
         # Sort points according to KEYPOINTS_NAMES
-        sorted_data = sorted(points.items(), key=lambda pair: KEYPOINTS_NAMES.index(pair[0]))
+        if not self.calibration: # Subject
+            sorted_data = sorted(points.items(), key=lambda pair: KEYPOINTS_NAMES.index(pair[0]))
+        else: # Calibration device
+            sorted_data = sorted(points.items(), key=lambda pair: ['11', '12', '13', '14', '15', '16', '17', '18', '19', '110',
+                                                                   '111', '112', '113', '114', '115', '116', '117', '118',
+                                                                   '119', '120', '121', '122', '123', '124'].index(pair[0]))
 
         points = {}
 

@@ -15,7 +15,7 @@ KEYPOINTS_NUM = 39
 
 
 class VICONReader:
-    def __init__(self, vicon_file_path: str):
+    def __init__(self, vicon_file_path: str, num_points=39):
         """
         Read vicon points from csv file.
 
@@ -26,6 +26,8 @@ class VICONReader:
          each has 3 coordinates (3*39=117). The coordinates are being read in the order of X, Y, Z.
 
         :param vicon_file_path: Path to the csv file.
+        :param num_points: Number of points. If it's a person, leave it as default. If it's the calibration device, set
+                            it to 24.
         """
 
         self.vicon_file_path = vicon_file_path
@@ -39,7 +41,7 @@ class VICONReader:
             frame = row[0] # First column holds the frame's id.
             points = []
 
-            for i in range(2, 119, 3): # Skip the 2 first columns, and then read each point. See my comment above about
+            for i in range(2, num_points*3+2, 3): # Skip the 2 first columns, and then read each point. See my comment above about
                 # the csv file structure.:
                 point = Point(float(row[i]), float(row[i+1]), float(row[i+2])) # x, y, z
                 points.append(point)
