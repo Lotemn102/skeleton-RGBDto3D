@@ -9,12 +9,16 @@ The `Issues` section in the repository holds all my progress summaries and meeti
 This repository contains folders for both projects.
 
 ```
+|--- angles_to_age
 |---  rgbd_to_3d
+|--- report
 |--- vicon_to_age
 ```
 
-- `rgbd_to_3d` contains all code for the first project.
-- `vicon_to_age` contains all code for second project.
+- `rgbd_to_3d` contains all code for the first sub-project.
+- `vicon_to_age` contains all code for second sub-project, using PointNet.
+- `angles_to_age` contains all code for second sub-project, using classical classifiers.
+- `report` contains my report and presentation if you wish to get more details.
 
 ## rgbd_to_3d
 
@@ -109,8 +113,6 @@ but it didn't work for me.
 - `unittests` folder contains unittests for the different scripts.
 
 
-
-
 ### How to re-produce my steps
 - **How to generate frames from a bag file** - in the file `data_cleaning/generate_frames.py` use the function `aux_generate_realsense_frames` to
 create realsense frames, and the function `aux_generate_vicon_frames` to draw the vicon points on images. 
@@ -120,7 +122,20 @@ function in `trim_data.py`.
 - **How to validate trimming** - Run `data_cleaning/validate_trimming.py`.
 - **How to calculate Kabsch transformation** -  Call the function `kabsch` from `kabsch.py`.
 
-## vicon_to_age
+## vicon_to_age & angles_to_age
 
 ### Main steps were done
-- **Generated dataset** - 
+- **Generated dataset** - Original dataset contains all frames from all recordings. Total of ~250,000 frames. each sample has 39 points, and age as a label. Dataset consists of 23 different people, 7 'old' and 16 'young'. Many of the samples in the dataset are actually the same frame+-, due to the Vicon high fps. In order to increase the dataset variance, i have sampled only frames that there average euclidean distance is 80mm. After this process, only ~3000 samples were left. 
+
+  <p align="center">
+  <img width="500" src="https://user-images.githubusercontent.com/35609587/138662416-087a7a9e-a0a0-4a04-a0c2-1198ff7dfd8d.png">
+  </p>
+  
+- `PointNet` - I have first trained `PointNet` as is on this data, for binary classification of `young` vs `old`. There was high overfitting on the train set. 
+- Classifying by angles - I have calculated for each frame 4 angles, as Omer and Maayan asked. I have trained several classical clasifiers (KNN, SVM, random forest) on that data. The results were poor. I have applied dimentionality reduction algorithms in order to visualize the data. It seems that there is not enough data for the classification.
+
+
+### How to re-produce my steps
+- In order to regenerate the dataset, run `create_splitted_dataset()` in `create_dataset.py`.
+- In order to re-train `PointNet` on the dataset, run `main()` in `vicon_to_age/train.py`.
+- In order to apply dimentions reduction and visualize the data, run `plot_all()` in `angles_to_age/dimensionality_reduction.py`.
