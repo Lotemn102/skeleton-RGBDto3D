@@ -1,0 +1,1088 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass article
+\use_default_options true
+\maintain_unincluded_children false
+\language english
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 12
+\spacing other 1.2
+\use_hyperref true
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder false
+\pdf_colorlinks false
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\topmargin 2cm
+\bottommargin 3cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Project Report – Age Estimation from Posture
+\end_layout
+
+\begin_layout Author
+Lotem Nadir
+\end_layout
+
+\begin_layout Section
+Goal
+\end_layout
+
+\begin_layout Standard
+The main purpose of this project is to develop algorithms and a pipeline
+ for age estimation from RGB-D images, using the posture of the subject.
+ The project consists of two tasks: (1) posture estimation from RGB-D images
+ and (2) age classification from posture.
+\end_layout
+
+\begin_layout Section
+Dataset
+\end_layout
+
+\begin_layout Standard
+A dataset of 15 recording sessions was collected.
+ In each recording session, a person was recorded in various poses known
+ to reflect age-differences: standing-still; standing on one leg; standing
+ with feet-together stance; squatting consecutively for 30 seconds.
+ Each recording was done using 3 RealSense cameras (RGB-D) and Vicon sensors
+ (3D coordinates) as shown in figure 1.
+ The RealSense cameras record 3 different angles: front, back and side.
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 1.jpg
+	scale 40
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename 2.jpg
+	scale 40
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename 3.jpg
+	scale 40
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename 4.jpg
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Examples of the different RealSense shooting angles, and the Vicon points.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\noindent
+Working with multiple sensors raises the following challenges: 
+\end_layout
+
+\begin_layout Itemize
+The frames from the different RealSense cameras and the Vicon system are
+ not aligned in time, and synchronizing is required.
+\end_layout
+
+\begin_layout Itemize
+The RealSense cameras and the Vicon sensors are not calibrated.
+ Calibration is required in order to find the transformation between the
+ Vicon coordinate system and the RealSense camera coordinate system.
+\end_layout
+
+\begin_layout Itemize
+The FPS of the RealSense cameras is 30, and the FPS of the Vicon system
+ is 120.
+ In some recordings, the FPS of the RealSense cameras is 15.
+\end_layout
+
+\begin_layout Itemize
+Since two of the RealSense cameras in each recording session are connected
+ to the same laptop, there is a frame drop in the output of these cameras.
+\end_layout
+
+\begin_layout Section
+Methods
+\end_layout
+
+\begin_layout Standard
+In this section I will be referring to each of the tasks separately.
+\end_layout
+
+\begin_layout Subsection
+Posture estimation from RGB-D images 
+\end_layout
+
+\begin_layout Standard
+My main contribution was by cleaning the dataset and finding a method to
+ calibrate RealSense cameras and the Vicon sensors.
+ For the dataset cleaning, automatic method was first examined, using the
+ OpenPose [1] model in order to detect the T-pose at the beginning of each
+ recording.
+ OpenPose performed poorly of non-frontal shooting angles as shown in figure
+ 2.
+ Due to the frame-drop in the RealSense cameras, manual fixes on the “front”
+ and “back” angles were required frequently.
+ Since this method was not effective nor accurate enough, the T-pose was
+ manually detected in all recordings.
+ In order to deal with the different FPS of the sensors, every 4th frame
+ was taken from the Vicon recordings.
+ Another method of averaging every 4 frames in the Vicon recordings was
+ considered.
+ In order to check which method is better, an angle in the neck was calculated
+ in both methods.
+ The difference between the two methods was negligible.
+ In order to deal with the frame-drop in the RealSense cameras, the differences
+ in the frames numbers caused by the frame-drop were extracted, and the
+ correlated Vicon frames were trimmed to fit the RealSense data.
+ This process is shown in figure 3.
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 5.jpg
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+OpenPose perform poorly on non-frontal frames
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Float figure
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 6.jpg
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Trimming the Vicon frames according to the RealSense frames.
+ Some frames were removed in the RealSense due to the frame-drop, e.g frame
+ #3 in this example.
+ Their correlated frames in the Vicon, e.g frame #9 in this example, were
+ not taken to the dataset.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\noindent
+Recordings were cleaned and trimmed for all 15 sessions.
+ Validation of the synchronizing was done manually.
+ For the calibration process, Kabsch’s algorithm [2] was used in order to
+ find the transformation between the Vicon coordinate system and the RealSense
+ camera coordinate system: given 2 sets of N paired points in D dimensions,
+ Kabsch’s algorithm calculates the rotation matrix that minimizes the RMSE
+ between the two sets, using singular value decomposition (SVD).
+ The calibration is done using a single frame from the RealSense camera
+ and the corresponding frame from the Vicon system.
+ Kabsch’s algorithm alone performed poorly.
+ Several improvements were made to the data before applying Kabsch’s algorithm
+ on it: Removing points with noisy depth value, averaging the depth value
+ of each point with neighboring pixels, sampling sub-group of the points
+ with lowest projection error.
+ After applying the improvements, the current projection error rate is 60mm
+ (RMSE).
+ The projection before and after the improvements is shown in figure 4.
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status collapsed
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 7.jpg
+	scale 40
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+  
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename 8.jpg
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Projecting the Vicon points, after applying on them the transformation calculate
+d with Kabsch’s algorithm without improvements (Left) and with improvements
+ (Right).
+ The red points are “ground truth”, the green points are the projected points.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Age classification from posture
+\end_layout
+
+\begin_layout Standard
+Two methods were examined for this purpose: (1) Predicting the age directly
+ from the 39 3d points, using the network of PointNet [3], and (2) Predicting
+ the age from four angles calculated based on the 3d Vicon points, using
+ classical classifiers.
+ In both method the ages of the subject were converted into binary labels.
+\end_layout
+
+\begin_layout Standard
+For predicting the age directly from the 39 3d points, PointNet was trained
+ as a binary classifier (“old” or “young”).
+ The network was trained 
+\begin_inset Quotes eld
+\end_inset
+
+as is
+\begin_inset Quotes erd
+\end_inset
+
+, except for changing the dimensions of the last softmax layer.
+ The training resulted in high overfitting on the trainset, as can be shown
+ in figure 5.
+ This might be caused by the fact that the data has low variance due to
+ the Vicon high FPS.
+ In order to increase the variance in the data, the dataset was re-generated,
+ this time only frames that have a difference of at least 80mm were kept
+ to the dataset.
+ This process is shown in figure 6.
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 12.jpg
+	scale 40
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename 13.jpg
+	scale 40
+
+\end_inset
+
+
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\end_inset
+
+
+\begin_inset Graphics
+	filename 14.jpg
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+PointNet training results.
+ The network has learned well to classify the train data, but failed to
+ generalize it's learning on the test set.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 11.jpg
+	scale 40
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+For each recording, the first frame was taken to the dataset.
+ For each consecutive frame, its average euclidean distance from the first
+ frame was calculated.
+ If that distance is equal or larger than 80mm, the frame was taken to the
+ dataset as well, and so on.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\noindent
+For predicting the age from the angles, four angles represent the human
+ posture were chosen.
+ Each one was defined by 3 3D points from the Vicon data.
+ The angles are described in appendix 5.1.
+ For each frame in the dataset, the four angles were extracted, and the
+ age was converted into a binary label (“old” or “young”) for that sample.
+ Dimensionality reduction algorithms were applied on the data in order to
+ visualize it, as shown in figure 7.
+ 
+\begin_inset Float figure
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 9.jpg
+	scale 30
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Data after applying several dimensionality reduction algorithms
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Standard
+\noindent
+As can be seen from the figure, the data is not separable.
+ Nonetheless, several classical classifiers (KNN, SVM, random forest) were
+ trained on the dataset.
+ The result were poor, as shown in appendix 5.2.
+ Results were also highly depended on the data splitting to train and test
+ sets.
+ This indicates more data is required for this problem.
+\end_layout
+
+\begin_layout Section
+Future Work
+\end_layout
+
+\begin_layout Standard
+My work has shown that more data is required to solve this problem.
+ Collecting data in the lab using the RealSense and the Vicon sensors is
+ the most accurate method, but we will not be able to achieve thousands
+ of samples this way.
+ Perhaps a new paradigm is required, such as using 3d human body datasets
+ available online.
+ These datasets are frequently given in meshes, but their vertices can be
+ seen as human body point clouds.
+ Perhaps, developing a method for estimating the Vicon points from the mesh's
+ vertices might be useful.
+ A list of such datasets is described in appendix 5.3.
+ For the data collection in the lab, it is necessary to develop automatic
+ method for synchronizing the recordings in time.
+ Such method can be to develop automatic T-pose detector or to start the
+ recordings with constant time gaps.
+ Moreover, the calibration must be calculated using a constant object.
+ For that purpose, a special calibration device was built, as shown in figure
+ 8.
+ 
+\begin_inset Float figure
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Graphics
+	filename 10.jpg
+	scale 20
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Calibration device
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Appendix
+\end_layout
+
+\begin_layout Subsection
+List of angles used for age classification
+\end_layout
+
+\begin_layout Standard
+The angles were calculated with the following points:
+\end_layout
+
+\begin_layout Enumerate
+(C7, STRN, T10)
+\end_layout
+
+\begin_layout Enumerate
+(RSHO, C7, LSHO)
+\end_layout
+
+\begin_layout Enumerate
+(CLAV, C7, middle of RFHD and LFHD)
+\end_layout
+
+\begin_layout Enumerate
+(STRN, C7, middle of RASI and LASI)
+\end_layout
+
+\begin_layout Subsection
+Classical classifiers results
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement H
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="4" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Classifier
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Best Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Train Accuracy
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Test Accuracy
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+KNN
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+n_neighbors: 5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.821
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.745
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SVM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C: 10, kernel: poly
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.829
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.614
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Random Forest
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+max_depth: 50, n_estimators: 50
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.835
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.684
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Classical classifiers results on the angles data.
+ Results were highly depended on the data splitting to train and test sets.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+3D human body datasets
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "3DPeople"
+target "https://cv.iri.upc-csic.es/"
+literal "false"
+
+\end_inset
+
+: 80 different subjects, mostly young, RGB-D, 3D skeleton.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "ScanDB"
+target "http://gvvperfcapeva.mpi-inf.mpg.de/public/ScanDB/"
+literal "false"
+
+\end_inset
+
+: 114 different subjects, meshes.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "People-Snapshot"
+target "https://graphics.tu-bs.de/people-snapshot"
+literal "false"
+
+\end_inset
+
+: 24 different young subjects, meshes.
+ 
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "Human3.6M"
+target "http://vision.imar.ro/human3.6m/description.php"
+literal "false"
+
+\end_inset
+
+: 11 different young subjects, meshes.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "Buff"
+target "http://buff.is.tue.mpg.de/"
+literal "false"
+
+\end_inset
+
+: 6 different young subjects, meshes.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "MPII"
+target "http://humanshape.mpi-inf.mpg.de/"
+literal "false"
+
+\end_inset
+
+: 4300 different people, old & young, meshes.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "USCS"
+target "https://graphics.soe.ucsc.edu/data/BodyModels/index.html"
+literal "false"
+
+\end_inset
+
+: 3000 different people, old & young, meshes.
+ Might be overlapping with MPII.
+\end_layout
+
+\begin_layout Subsection
+Code 
+\end_layout
+
+\begin_layout Standard
+My code is maintained in GitHub in the following location:
+\end_layout
+
+\begin_layout Standard
+\noindent
+https://github.com/Lotemn102/skeleton-RGBDto3D
+\end_layout
+
+\begin_layout Standard
+\noindent
+Documentation comments were added throughout the entire code during my work.
+ E-mails and meeting summaries were added as well to the repository.
+ 
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-1"
+
+\end_inset
+
+ OpenPose: Realtime Multi-Person 2D Pose Estimation using Part Affinity
+ Fields, Cao et al., 2018
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-2"
+
+\end_inset
+
+ A solution for the best rotation to relate two sets of vectors, W.
+ Kabsch, 1972
+\end_layout
+
+\begin_layout Bibliography
+\begin_inset CommandInset bibitem
+LatexCommand bibitem
+key "key-3"
+
+\end_inset
+
+ PointNet: Deep Learning on Point Sets for 3D Classification and Segmentationl,
+ Charles R.
+ Qi et al., 2016.
+\end_layout
+
+\end_body
+\end_document
