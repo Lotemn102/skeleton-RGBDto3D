@@ -104,19 +104,100 @@ def tsne(x, y):
     plt.legend()
     plt.show()
 
-def pca(x, y):
+def pca(x, y, sub_nums):
     model = PCA(n_components=2)
-    proj = model.fit_transform(x)
+    model = model.fit(x)
+
+    first_comp = model.components_[0]
+    second_comp = model.components_[1]
+    x_proj = np.dot(x, first_comp)
+    y_proj = np.dot(x, second_comp)
+
+    # Weights of first pc
+    indices = range(1, len(first_comp)+1)
+    #indices = ["alpha_" + str(i) for i in range(1, len(first_comp)+1)]
+    stacked = np.vstack((indices, first_comp)).T
+    stacked = pd.DataFrame(stacked)
+    stacked.columns = ['alpha', 'PC1 weight']
+    print(stacked)
+
+    # Separation by first pc
+    idx_1 = np.where(y == 1)
+    idx_0 = np.where(y == 0)
+    a = x_proj[idx_1]
+    b = x_proj[idx_0]
+    plt.scatter(a, [0]*len(a), s=10, c='r')
+    plt.scatter(b, [0]*(b), s=10)
+    plt.show()
+    plt.close()
+
+    # Separation by second pc
+    idx_1 = np.where(y == 1)
+    idx_0 = np.where(y == 0)
+    a = y_proj[idx_1]
+    b = y_proj[idx_0]
+    plt.scatter(a, [0] * len(a), s=10, c='r')
+    plt.scatter(b, [0] * (b), s=10)
+    plt.show()
+    plt.close()
+
+    # Plot projection by both axes
+    proj = model.transform(x)
     proj_df = pd.DataFrame(proj)
 
     idx_1 = np.where(y == 1)
     idx_0 = np.where(y == 0)
 
-    plt.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
-    plt.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
+    # Plot with subject numbers
+    fig, ax = plt.subplots()
+    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
+    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
 
+    x_temp = list(proj_df.iloc[idx_1][0])
+    y_temp = list(proj_df.iloc[idx_1][1])
+    sub_nums_1 = sub_nums[idx_1]
+    sub_nums_0 = sub_nums[idx_0]
+
+    for i, txt in enumerate(sub_nums_1):
+        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+
+    x_temp = list(proj_df.iloc[idx_0][0])
+    y_temp = list(proj_df.iloc[idx_0][1])
+    for i, txt in enumerate(sub_nums_0):
+        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+
+    plt.title("PCA, with subject number")
     plt.legend()
     plt.show()
+    plt.close()
+
+    # Plot with subject age
+    NUM_TO_AGE_MAP = {1: 24, 2: 26, 3: 27, 4: 27, 5: 27, 6: 25, 7: 27, 8: 30, 9: 23, 10: 27, 11: 26, 12: 27, 13: 23,
+                      14: 26, 15: 26, 16: 27, 17: 85, 18: 72, 19: 77, 20: 72, 21: 66, 22: 74, 23: 67}
+    ages = np.array([NUM_TO_AGE_MAP[i] for i in sub_nums])
+
+    fig, ax = plt.subplots()
+    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
+    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
+
+    x_temp = list(proj_df.iloc[idx_1][0])
+    y_temp = list(proj_df.iloc[idx_1][1])
+    ages_nums_1 = ages[idx_1]
+    ages_nums_0 = ages[idx_0]
+
+    for i, txt in enumerate(ages_nums_1):
+        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+
+    x_temp = list(proj_df.iloc[idx_0][0])
+    y_temp = list(proj_df.iloc[idx_0][1])
+    for i, txt in enumerate(ages_nums_0):
+        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+
+    plt.title("PCA, with subject age")
+    plt.legend()
+    plt.show()
+    plt.close()
+
 
 def plot_all(x, y):
     models = [Isomap(n_components=2), MDS(n_components=2, metric=True), TSNE(n_components=2, learning_rate='auto'),
@@ -184,17 +265,18 @@ if __name__ == "__main__":
     x_train, x_test, y_train, y_test = read()
     # x_train, x_test = normalize(x_train, x_test)
     y_train, y_test = to_binary(y_train, y_test)
-    x_train, x_test, y_train, y_test = shuffle(x_train, x_test, y_train, y_test)
+    # x_train, x_test, y_train, y_test = shuffle(x_train, x_test, y_train, y_test)
 
     x = np.vstack((x_train, x_test))
     y = np.vstack((y_train, y_test))
+    sub_nums = np.array([int(e[1][4:][:-10]) for e in y])
     y = np.array([int(e[0]) for e in y]) # Each label is tuple of (age, filename). We only need the ages for the
                                          # visualization.
 
     # isomap(x, y)
-    K = multidimensional_scaling(x, y)
+    # multidimensional_scaling(x, y)
     # tsne(x, y)
-    # pca(x, y)
+    pca(x, y, sub_nums)
     # plot_all(x, y)
     # train_vs_test_plots(x_train, x_test, y_train, y_test)
     # L, Y = mds_eigenvals(x)
