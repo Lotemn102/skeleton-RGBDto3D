@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from mpl_toolkits.mplot3d import Axes3D
 
-from angles_to_age.data_reader import read
+from angles_to_age.data_reader_2 import read
 from angles_to_age.preprocess import normalize, to_binary, shuffle
 
 
@@ -64,10 +64,8 @@ def mds_eigenvals(x):
 
 
 def multidimensional_scaling(x, y, metric=True):
-    x_ = [e for i, e in enumerate(x) if i % 10 == 0]
-    y_ = [e for i, e in enumerate(y) if i % 10 == 0]
-    x = np.array(x_)
-    y = np.array(y_)
+    x = np.array(x)
+    y = np.array(y)
 
     model = MDS(n_components=3, metric=metric)
     proj = model.fit_transform(x)
@@ -81,10 +79,10 @@ def multidimensional_scaling(x, y, metric=True):
     # plt.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
 
     # 3D Scatter
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], proj_df.iloc[idx_1][2], s=10, c='b', marker="o", label='old')
-    # ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], proj_df.iloc[idx_0][2], s=10, c='r', marker="o", label='young')
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], proj_df.iloc[idx_1][2], s=10, c='b', marker="o", label='old')
+    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], proj_df.iloc[idx_0][2], s=10, c='r', marker="o", label='young')
 
     plt.legend()
     plt.show()
@@ -184,7 +182,7 @@ def train_vs_test_plots(x_train, x_test, y_train, y_test):
 
 if __name__ == "__main__":
     x_train, x_test, y_train, y_test = read()
-    x_train, x_test = normalize(x_train, x_test)
+    # x_train, x_test = normalize(x_train, x_test)
     y_train, y_test = to_binary(y_train, y_test)
     x_train, x_test, y_train, y_test = shuffle(x_train, x_test, y_train, y_test)
 
@@ -194,13 +192,12 @@ if __name__ == "__main__":
                                          # visualization.
 
     # isomap(x, y)
-    # K = multidimensional_scaling(x, y)
+    K = multidimensional_scaling(x, y)
     # tsne(x, y)
     # pca(x, y)
     # plot_all(x, y)
     # train_vs_test_plots(x_train, x_test, y_train, y_test)
-    L, Y = mds_eigenvals(x)
+    # L, Y = mds_eigenvals(x)
 
-    v = 5
-    c = 6
+    t = 4
 

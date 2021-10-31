@@ -3,23 +3,20 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from angles_to_age.data_reader import read
+from angles_to_age.data_reader_2 import read
 from angles_to_age.preprocess import normalize, to_binary
 
-def correlation_matrix(train, test):
-    x_train = pd.DataFrame(train)
-    x_test = pd.DataFrame(test)
+def correlation_matrix(data):
+    data = pd.DataFrame(data)
 
-    ticks = ['alpha_1', 'alpha_2', 'alpha_3', 'alpha_4', 'label']
+    ticks = ['alpha_1', 'alpha_2', 'alpha_3', 'alpha_4', 'alpha_5', 'alpha_6', 'alpha_7', 'alpha_8', 'alpha_9',
+             'alpha_10', 'alpha_11', 'label']
 
-    corr = x_train.corr()
+    corr = data.corr()
     sns.heatmap(corr, xticklabels=ticks, yticklabels=ticks)
-    plt.show()
-    plt.close()
+    plt.savefig("correlation.png", bbox_inches = "tight")
 
-    corr = x_test.corr()
-    sns.heatmap(corr, xticklabels=ticks, yticklabels=ticks)
-    plt.show()
+
 
 def plot_data(x_train, y_train):
     # Sub-sample 3 features
@@ -63,11 +60,15 @@ def plot_data(x_train, y_train):
 
 if __name__ == "__main__":
     x_train, x_test, y_train, y_test = read()
+    # x_train, x_test = normalize(x_train, x_test)
+    y_train, y_test = to_binary(y_train, y_test)
+    #x_train, x_test, y_train, y_test = shuffle(x_train, x_test, y_train, y_test)
 
-    train = np.append(x_train, np.array([y_train]).T, axis=1)
-    test = np.append(x_test, np.array([y_test]).T, axis=1)
-    train, test = normalize(train, test)
-    correlation_matrix(train, test)
+    x = np.vstack((x_train, x_test))
+    y = np.vstack((y_train, y_test))
+    y = np.array([int(e[0]) for e in y])  # Each label is tuple of (age, filename). We only need the ages for the
+    # visualization.
+    y = np.array([y]).T
+    data = np.hstack((x, y))
 
-    x_train, x_test = normalize(x_train, x_test)
-    plot_data(x_train, y_train)
+    correlation_matrix(data)
