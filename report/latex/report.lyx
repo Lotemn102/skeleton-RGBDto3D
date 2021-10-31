@@ -1031,6 +1031,19 @@ literal "false"
  Might be overlapping with MPII.
 \end_layout
 
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "CASEAR"
+target "http://shapeanalysis.com/CAESAR.htm"
+literal "false"
+
+\end_inset
+
+: 4400 different people, old & young, 3D scans in VRML format.
+ Not free!
+\end_layout
+
 \begin_layout Subsection
 Code 
 \end_layout

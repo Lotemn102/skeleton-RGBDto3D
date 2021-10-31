@@ -279,7 +279,7 @@ My main contribution was by cleaning the dataset and finding a method to
 placement H
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \align center
@@ -312,9 +312,10 @@ OpenPose perform poorly on non-frontal frames
 
  
 \begin_inset Float figure
+placement H
 wide false
 sideways false
-status collapsed
+status open
 
 \begin_layout Plain Layout
 \align center
@@ -1028,6 +1029,18 @@ literal "false"
 
 : 3000 different people, old & young, meshes.
  Might be overlapping with MPII.
+\end_layout
+
+\begin_layout Enumerate
+\begin_inset CommandInset href
+LatexCommand href
+name "CASEAR"
+target "http://shapeanalysis.com/CAESAR.htm"
+literal "false"
+
+\end_inset
+
+: 4400 different people, old & young, 3D scans in VRML format.
 \end_layout
 
 \begin_layout Subsection
