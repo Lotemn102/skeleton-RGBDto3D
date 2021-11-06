@@ -213,7 +213,7 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_s
         A[i][1] = y * 1000
         A[i][2] = z * 1000
 
-    #  -------------------------------------- FOR DEBUGGING: Show points -----------------------------------------------
+    #  ----------------------- FOR DEBUGGING: Show points after reconstruction to 3D -----------------------------------
     pcd = o3d.geometry.PointCloud()
     points = np.array([(point[0], point[1], point[2]) for point in points_3d.values()])
     pcd.points = o3d.utility.Vector3dVector(points)
@@ -233,18 +233,19 @@ def test():
     # 'clean_points_names' are the names of the remaining points after removing points with noisy depth values.
     points_deprojected, clean_points_names = read_points_from_deprojection(bag_file_path=DEVICE_BAG_PATH,
                                                                            annotated_pixels_path=DEVICE_ANNOTATIONS,
-                                                                           kernel_size=31,
-                                                                           remove_noisy_depth_points=True)
+                                                                           kernel_size=1,
+                                                                           remove_noisy_depth_points=False)
     device_vicon_reader = VICONReader(DEVICE_CSV_PATH, num_points=24)
     points = device_vicon_reader.get_points()
     device_vicon_points = list(points.values())[0]
 
     # ---------------------------------------------- FOR DEBUGGING -----------------------------------------------------
+    #  ----------------------------------------- DRAW ALL VICON POINTS -------------------------------------------------
     pcd = o3d.geometry.PointCloud()
     points = np.array([(point.x, point.y, point.z) for point in device_vicon_points])
     pcd.points = o3d.utility.Vector3dVector(points)
     visualizer = o3d.visualization.Visualizer()
-    visualizer.create_window(window_name='vicon points')
+    visualizer.create_window(window_name='all vicon points')
     visualizer.add_geometry(pcd)
     visualizer.run()
     visualizer.close()
@@ -256,6 +257,18 @@ def test():
     for p, name in zip(device_vicon_points, DEVICE_POINTS_NAMES):
         if name in clean_points_names:
             clean_points.append(p)
+
+    # ---------------------------------------------- FOR DEBUGGING -----------------------------------------------------
+    #  ---------------------------------- DRAW VICON POINTS THAT WERE ANNOTATED ----------------------------------------
+    pcd = o3d.geometry.PointCloud()
+    points = np.array([(point.x, point.y, point.z) for point in clean_points])
+    pcd.points = o3d.utility.Vector3dVector(points)
+    visualizer = o3d.visualization.Visualizer()
+    visualizer.create_window(window_name='vicon points that were annotated')
+    visualizer.add_geometry(pcd)
+    visualizer.run()
+    visualizer.close()
+    # ------------------------------------------------------------------------------------------------------------------
 
     # Convert into matrix
     clean_mat = np.zeros((len(clean_points), 3))
@@ -295,19 +308,26 @@ def test():
 
         image = cv2.circle(image, (x, y), radius=1, color=(0, 255, 0), thickness=5)
 
-    cv2.imshow("device projection", image)
-    cv2.waitKey()
+    for i, row in enumerate(device_annotated_points.values()):
+        x = int(row[0])
+        y = int(row[1])
+
+        image = cv2.circle(image, (x, y), radius=1, color=(0, 0, 255), thickness=5)
+
+    # cv2.imshow("device projection", image)
+    # cv2.waitKey()
+    cv2.imwrite("projected.png", image)
 
     # ----------------------------- Apply the projection matrix on the subject points ----------------------------------
-    # Read Vicon points
-    subject_vicon_reader = VICONReader(SUB_CSV_PATH)
-    points = subject_vicon_reader.get_points()
-    # Omer started recording the RealSense video 10 seconds after the Vicon. So take frame number 1200 (FPS is 120).
-    subject_vicon_points = points[1200]
-    projected = project_rs(vicon_3d_points=subject_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
-                           bag_file_path=SUB_BAG_PATH)
-
-    # Get the annotated points for finding the error
+    # # Read Vicon points
+    # subject_vicon_reader = VICONReader(SUB_CSV_PATH)
+    # points = subject_vicon_reader.get_points()
+    # # Omer started recording the RealSense video 10 seconds after the Vicon. So take frame number 1200 (FPS is 120).
+    # subject_vicon_points = points[1200]
+    # projected = project_rs(vicon_3d_points=subject_vicon_points, scale=s, rotation_matrix=R, translation_vector=t,
+    #                        bag_file_path=SUB_BAG_PATH)
+    #
+    # # Get the annotated points for finding the error
 
 
 

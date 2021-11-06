@@ -110,6 +110,9 @@ def pca(x, y, sub_nums):
 
     first_comp = model.components_[0]
     second_comp = model.components_[1]
+
+    print(np.mean(first_comp))
+    print(np.mean(second_comp))
     x_proj = np.dot(x, first_comp)
     y_proj = np.dot(x, second_comp)
 
@@ -118,7 +121,7 @@ def pca(x, y, sub_nums):
     #indices = ["alpha_" + str(i) for i in range(1, len(first_comp)+1)]
     stacked = np.vstack((indices, first_comp)).T
     stacked = pd.DataFrame(stacked)
-    stacked.columns = ['alpha', 'PC1 weight']
+    stacked.columns = ['alpha', 'PC1']
     print(stacked)
 
     # Separation by first pc
@@ -150,8 +153,8 @@ def pca(x, y, sub_nums):
 
     # Plot with subject numbers
     fig, ax = plt.subplots()
-    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
-    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
+    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=80, c='b', marker="o", label='old')
+    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=80, c='r', marker="o", label='young')
 
     x_temp = list(proj_df.iloc[idx_1][0])
     y_temp = list(proj_df.iloc[idx_1][1])
@@ -159,17 +162,16 @@ def pca(x, y, sub_nums):
     sub_nums_0 = sub_nums[idx_0]
 
     for i, txt in enumerate(sub_nums_1):
-        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+        plt.text(x_temp[i] - 0.01, y_temp[i] - 0.12, str(txt), fontsize=9)
 
     x_temp = list(proj_df.iloc[idx_0][0])
     y_temp = list(proj_df.iloc[idx_0][1])
     for i, txt in enumerate(sub_nums_0):
-        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+        plt.text(x_temp[i] - 0.01, y_temp[i] - 0.12, str(txt), fontsize=9)
 
     plt.title("PCA, with subject number")
     plt.legend()
-    plt.show()
-    plt.close()
+    plt.savefig('pca_numbers.png')
 
     # Plot with subject age
     NUM_TO_AGE_MAP = {1: 24, 2: 26, 3: 27, 4: 27, 5: 27, 6: 25, 7: 27, 8: 30, 9: 23, 10: 27, 11: 26, 12: 27, 13: 23,
@@ -177,8 +179,8 @@ def pca(x, y, sub_nums):
     ages = np.array([NUM_TO_AGE_MAP[i] for i in sub_nums])
 
     fig, ax = plt.subplots()
-    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=10, c='b', marker="o", label='old')
-    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=10, c='r', marker="o", label='young')
+    ax.scatter(proj_df.iloc[idx_1][0], proj_df.iloc[idx_1][1], s=200, c='b', marker="o", label='old')
+    ax.scatter(proj_df.iloc[idx_0][0], proj_df.iloc[idx_0][1], s=200, c='r', marker="o", label='young')
 
     x_temp = list(proj_df.iloc[idx_1][0])
     y_temp = list(proj_df.iloc[idx_1][1])
@@ -186,17 +188,16 @@ def pca(x, y, sub_nums):
     ages_nums_0 = ages[idx_0]
 
     for i, txt in enumerate(ages_nums_1):
-        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+        plt.text(x_temp[i] - 0.025, y_temp[i] - 0.015, str(txt), fontsize=9, color="white")
 
     x_temp = list(proj_df.iloc[idx_0][0])
     y_temp = list(proj_df.iloc[idx_0][1])
     for i, txt in enumerate(ages_nums_0):
-        plt.text(x_temp[i] + 0.01, y_temp[i] + 0.01, str(txt), fontsize=8)
+        plt.text(x_temp[i] - 0.025, y_temp[i] - 0.015, str(txt), fontsize=9, color="white")
 
     plt.title("PCA, with subject age")
     plt.legend()
-    plt.show()
-    plt.close()
+    plt.savefig('pca_ages.png')
 
 
 def plot_all(x, y):
