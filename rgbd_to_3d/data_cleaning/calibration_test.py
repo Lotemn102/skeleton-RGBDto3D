@@ -145,7 +145,7 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_s
     print("Done")
 
     # Read points
-    pcd = o3d.io.read_point_cloud("pc.ply")  # TODO: Is the points are in meters?
+    pcd = o3d.io.read_point_cloud("pc.ply")
     points = np.asarray(pcd.points)
 
     # Visualize pointcloud
@@ -167,8 +167,7 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_s
             for j in range(-1 * int(kernel_size / 2), int(kernel_size / 2) + 1):
                 x = int(np.round(coordinate[0])) + i
                 y = int(np.round(coordinate[1])) + j
-                depth_pixel = [x, y]
-                depth_value = aligned_depth_image[depth_pixel[0]][depth_pixel[1]]
+                depth_value = aligned_depth_image[x][y]
 
                 if remove_noisy_depth_points and depth_value > clipping_distance:
                     continue
@@ -178,12 +177,12 @@ def read_points_from_deprojection(bag_file_path, annotated_pixels_path, kernel_s
 
                 depth_value_in_meters = depth_value * depth_scale  # source: https://dev.intelrealsense.com/docs/rs-align-advanced
                 # the function rs2_deproject_pixel_to_point expect to get the depth value in meters.
-                depth_point = rs.rs2_deproject_pixel_to_point(depth_intrin, depth_pixel, depth_value_in_meters)
+                depth_point = rs.rs2_deproject_pixel_to_point(depth_intrin, [x, y], depth_value_in_meters)
 
                 # -------------------------- FOR DEBUGGING: Check re-construction works --------------------------------
                 pixel = rs.rs2_project_point_to_pixel(depth_intrin, depth_point)
                 pixel[0], pixel[1] = int(np.round(pixel[0])), int(np.round(pixel[1]))
-                assert pixel == depth_pixel
+                assert pixel == [x, y]
                 # ------------------------------------------------------------------------------------------------------
 
                 neighborhood_points.append(depth_point)

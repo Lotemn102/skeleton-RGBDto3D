@@ -357,22 +357,13 @@ def project_rs(vicon_3d_points, scale, rotation_matrix, translation_vector, bag_
     # Vicon 3d -> realsense 3d
     # Rotate points. The axes system of the vicon points and realsense 3d points are different. I've decided to rotate
     # them all according to the the open3d default axes system.
-    dummy_dict = {}
-
-    for i, p in enumerate(vicon_3d_points):
-        dummy_dict[i] = p
-
-    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=dummy_dict)
-    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
-    rotated_points = rotate_vicon_points_90_degrees_counterclockwise(rotation_axis='x', points=rotated_points)
-    vicon_3d_points = [p for k, p in rotated_points.items()]
 
     B = np.zeros((len(vicon_3d_points), 3))
 
     for i, keypoint in enumerate(vicon_3d_points):
-        B[i][0] = keypoint[0]
-        B[i][1] = keypoint[1]
-        B[i][2] = keypoint[2]
+        B[i][0] = keypoint.x
+        B[i][1] = keypoint.y
+        B[i][2] = keypoint.z
 
     B = np.asmatrix(B)  # B is in mm
 
@@ -417,7 +408,7 @@ def get_intrinsics(bag_file_path, first_frame):
     pipe, config = reader.setup_pipeline()
     frames = pipe.wait_for_frames()
 
-    while frames.frame_number < first_frame: # 5842
+    while frames.frame_number < first_frame:
         frames = pipe.wait_for_frames()
 
     align_to = rs.stream.color
